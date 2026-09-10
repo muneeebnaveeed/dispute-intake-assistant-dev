@@ -1,0 +1,135 @@
+# Design decisions
+
+A running record of the choices behind this project: what was considered, what was picked,
+and why. Written as decisions are made, so the final report can cite them rather than
+reconstruct them. Each entry lists the options in the order they were weighed, with the chosen
+one marked **→ chosen**.
+
+Status key: *decided* (fixed), *provisional* (revisit if evidence says so), *open*.
+
+---
+
+## D1. What to build — *decided 2026-09-10*
+
+The course requires a project that *uses* generative AI; the topic is open. Selection criteria:
+(1) Gen AI is the core, not decoration; (2) buildable in about eight evenings alongside a
+bachelor's thesis; (3) doubles as portfolio evidence in payments/fintech; (4) has a live demo
+that fits a ten-minute lab slot.
+
+| Option | Verdict |
+|---|---|
+| **Dispute intake assistant** — turn a cardholder's messy complaint into a structured dispute case file, asking only for what is missing | **→ chosen.** Exercises extraction, structured output, multi-turn state, and hallucination control, all measurable. Domain I know from work. |
+| Evidence-based adjudication copilot — RAG over dispute-regime rules producing a cited recommendation for a human | Honourable mention. Stronger reasoning story, but needs a realistic synthetic case corpus before anything can be built or evaluated — a week of work on its own. |
+| Regime-aware customer-communication generator — templated dispute letters per regime with an LLM-as-judge compliance check | Honourable mention. Smallest scope; weaker demo (text generation looks like every other LLM demo). |
+| RAG Q&A over a personal Markdown knowledge base | Independent of the domain; strong "built the thing the course is about" story; weaker portfolio link. |
+| Lab-report generator from raw experiment notes | Fallback only. |
+| Image/audio generation, fine-tuning projects | Ruled out: no career overlap; fine-tuning too expensive for the timeline and unnecessary for the behaviour needed. |
+
+## D2. Domain: card disputes vs. insurance claims — *decided 2026-09-10*
+
+The same architecture works for any structured-intake domain. An **insurance first-notice-of-loss
+(FNOL) assistant** was drafted in full for one afternoon — claim lines instead of dispute types,
+coverage section instead of regime, fraud indicators such as a claim filed days after policy
+start. It was dropped the same day.
+
+- **→ Card disputes.** The domain I work in, so the questionnaire, dispute types, and
+  inconsistency rules come from real knowledge rather than guesses. The professor accepts
+  projects that repurpose a student's own domain, provided the deliverable stands alone.
+- Insurance FNOL. Would have removed any question of overlap with my thesis, but the
+  independence is achieved another way (see D3), and the domain knowledge would have been
+  thinner.
+
+## D3. Relationship to my thesis — *decided 2026-09-10*
+
+My bachelor's thesis is an issuer-side automated dispute-resolution engine (Go, PostgreSQL). This
+project borrows **only the domain idea**. Considered:
+
+- Share the questionnaire JSON schema so the thesis could consume this project's output over
+  HTTP later. Rejected: even a shared contract couples the two and muddies "whose work is
+  this" in grading.
+- **→ Fully independent.** Own repository, own schema, own regime labels, no imports, no
+  endpoints. Output is a JSON file. If the thesis ever wants it, that is a future adapter, not
+  a dependency.
+
+## D4. Architecture: where the intelligence lives — *decided 2026-09-10*
+
+The central principle: **the model extracts, the code decides.**
+
+| Option | Verdict |
+|---|---|
+| Let the model run the whole conversation and decide when the case is complete | Rejected. Completeness, regime, and hard rules would then be unverifiable and non-reproducible. |
+| Agent with tools (`ask_question`, `set_field`, `mark_complete`) | Considered. Cleaner-looking, but every decision would still be the model's, and the loop is harder to evaluate deterministically. |
+| **→ One extraction call per turn, schema-constrained, every field nullable; deterministic Python owns completeness, regime selection, hard inconsistency rules, and the turn cap** | Chosen. The model proposes (fields, one next question, semantic contradictions with quoted evidence); code disposes. Every trust-critical decision is a pure function with a unit test. |
+
+Consequences: the model is stateless — the session object is the state; the "null rule"
+(never fill what wasn't stated) becomes the headline metric; prompt injection can mislabel but
+cannot act (see D9).
+
+## D5. Model and API features — *provisional 2026-09-10*
+
+- **→ Claude Opus 5** via the official Anthropic Python SDK. Anthropic's recommended default;
+  the whole evaluation run costs well under two euros, so cost is not a reason to trade
+  capability.
+- Structured outputs (`messages.parse` with a Pydantic model) rather than "please answer in
+  JSON" — constrained decoding guarantees shape; the prompt and eval handle truth.
+- Adaptive thinking is on by default on this model; reasoning depth is tuned with `effort`,
+  not with "think step by step" in the prompt.
+- Prompt caching on the frozen system prompt.
+- Not used: sampling controls (unavailable on current models — outputs are non-deterministic,
+  so the eval is run twice and the spread reported); refusal fallback (optional hardening,
+  noted in limitations).
+
+## D6. Language and environment — *decided 2026-09-10*
+
+| Option | Verdict |
+|---|---|
+| TypeScript on Node (my strongest stack) | Drafted first — full plan written, then dropped. |
+| **→ Python 3.10** | Chosen because the course and professor lean Python, and the Python SDK + Pydantic + Streamlit is the most direct path. 3.10 is the SDK's floor and the course's version. |
+| Environment: local Anaconda install | Not installed on my machine; system Python is 3.9. |
+| Environment: `uv` / plain venv | Fast, but not the course's tooling. |
+| **→ Conda environment (`environment.yml`) running inside Docker** | The same file works for anyone with Anaconda (`conda env create -f environment.yml`) and for anyone with only Docker (`docker compose up`). conda-forge only: Anaconda's default channels now require accepting Terms of Service, which broke a non-interactive build. |
+
+## D7. Demo surface — *decided 2026-09-10*
+
+| Option | Verdict |
+|---|---|
+| Terminal chat (CLI) | Drafted first. Cheapest, but hard for an audience to follow. |
+| Custom web UI (Express + static page, later Streamlit) | A web demo was required. |
+| **→ Streamlit** | Chosen. One Python file, chat pane plus a live case-file panel that re-renders every turn (type, regime, missing fields shrinking, flags appearing). The course-native demo format. Sessions are in memory — acceptable for a demo, stated in limitations. |
+
+## D8. Evaluation design — *decided 2026-09-10*
+
+- **→ Golden set of 20 hand-written cases**, driven by a scripted cardholder that answers the
+  assistant's follow-up questions by field. Metrics: field-level accuracy, **invention rate**
+  (fields filled that the cardholder never stated — the hallucination measure), flag
+  precision/recall, regime match, turns to completion.
+- Scoring is deterministic code, **not an LLM judge**: outputs are structured and can be
+  compared exactly, so a judge model would add cost and a second source of error.
+- One prompt revision between run v1 and run v2, both kept. The point is measurement, not a
+  perfect score; cases are never edited to improve numbers.
+- Known limitation: self-written cases are not real complaints (distribution shift).
+
+## D9. Prompt-injection posture — *decided 2026-09-10*
+
+Cardholder text is untrusted input inside the prompt. Defence in depth: instructions only in
+the system block; user text wrapped in a `<cardholder_message>` tag and declared as data;
+schema-constrained output (no free-text channel); all decisions in code; the model's own output
+validated (field whitelist, enum/date/range checks, question text capped and rendered as plain
+text); narrative set by code from raw text; an `INSTRUCTION_IN_INPUT` flag so attempts are
+visible; no tools, so no side effects; two adversarial cases in the eval. Full list and
+mapping to code in the project plan; results in the report's Security section.
+
+## D10. Things deliberately left out — *decided 2026-09-10*
+
+- **RAG** — no external knowledge needed; regime selection is a lookup table.
+- **Fine-tuning** — no training data; prompting plus a schema already reaches the behaviour.
+- **Multi-model cascades / cheaper models** — one model, one cache namespace, simpler story.
+- **Persistence, auth, audit log** — a real issuer would need them; out of scope for a demo.
+
+---
+
+## Open questions
+- Does an in-band `reasoning` field placed first in the schema (a manual chain-of-thought
+  variant) improve extraction accuracy? *Planned as the v2 experiment if v1 leaves headroom.*
+- Does an English system prompt extract correctly from Hungarian text with no changes?
+  *One eval case tests this.*
