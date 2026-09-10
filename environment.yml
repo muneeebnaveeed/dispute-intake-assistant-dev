@@ -1,0 +1,13 @@
+name: dispute-intake
+channels:
+  - conda-forge
+  - nodefaults   # conda-forge only: no Anaconda ToS prompt, fully open-source channel
+dependencies:
+  - python=3.10
+  - pytest
+  - pip
+  - pip:
+      - anthropic
+      - pydantic>=2
+      - streamlit
+      - python-dotenv

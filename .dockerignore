@@ -1,0 +1,6 @@
+.git
+.env
+out/
+__pycache__/
+.pytest_cache/
+docs/*.pdf

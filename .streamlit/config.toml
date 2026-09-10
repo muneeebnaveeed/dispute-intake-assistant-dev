@@ -1,0 +1,4 @@
+[server]
+headless = true
+fileWatcherType = "poll"   # inotify doesn't cross the Docker-on-macOS bind mount
+runOnSave = true
