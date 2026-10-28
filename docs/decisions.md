@@ -71,7 +71,16 @@ Consequences: the model is stateless — the session object is the state; the "n
 (never fill what wasn't stated) becomes the headline metric; prompt injection can mislabel but
 cannot act (see D9).
 
-## D5. Model and API features — *provisional 2026-09-10*
+## D5. Model and API features — *provisional 2026-09-10, model updated 2026-10-28*
+
+> **Update 2026-10-28:** the extraction model is now **Claude Opus 5.5** (`claude-opus-5-5`),
+> the successor to Opus 5 at a lower price. Two differences matter here: thinking cannot be
+> disabled at all (effort is the only control), and effort defaults to `medium`, not `high`,
+> so `intake/config.py` sets it explicitly. Requests also opt into the server-side refusal
+> fallback (`fallbacks="default"`, beta `server-side-fallback-2026-07-01`): if a safety
+> classifier declines a turn, the API re-runs it on a fallback model within the same call.
+> The smoke check passes 7/7 at `medium`; the eval decides whether `high` earns its cost.
+
 
 - **→ Claude Opus 5** via the official Anthropic Python SDK. Anthropic's recommended default;
   the whole evaluation run costs well under two euros, so cost is not a reason to trade
@@ -130,7 +139,39 @@ mapping to code in the project plan; results in the report's Security section.
 - **RAG** — no external knowledge needed; regime selection is a lookup table.
 - **Fine-tuning** — no training data; prompting plus a schema already reaches the behaviour.
 - **Multi-model cascades / cheaper models** — one model, one cache namespace, simpler story.
+  (A second model *is* used, but only for the sampling demonstration, never as a cascade — D11.)
 - **Persistence, auth, audit log** — a real issuer would need them; out of scope for a demo.
+
+## D11. A second model for sampling parameters — *decided 2026-09-17, revised 2026-10-28*
+
+The rubric asks for parameterisation such as temperature. Opus 5.5 rejects temperature,
+top_p and top_k, so the extraction path cannot show them.
+
+| Option | Verdict |
+|---|---|
+| Show only `max_tokens` and `effort` on Opus 5.5 | Honest but misses the rubric's own example. |
+| **→ Add a sampling path on Claude Sonnet 4.6** | Chosen. Same prompt, same schema, same `messages.parse`; only the model and the sampling fields differ. Sonnet 4.6 is the newest generation that still accepts sampling parameters. No thinking on this path: extended thinking constrains sampling. |
+| Move all extraction to Sonnet 4.6 | Rejected: trades capability on every turn for a knob that extraction does not want (low temperature is the right setting for extraction anyway). |
+
+**Finding, 2026-10-28.** The SDK (2.3.0) sends API version `2026-10-21`, and on that version
+the API rejects `temperature` on *every* model ("Extra inputs are not permitted"), including
+Sonnet 4.6, Opus 4.6 and Haiku 4.5. The SDK has also dropped the typed arguments. Sending
+`anthropic-version: 2023-06-01` restores them, and structured outputs still work there. So the
+sampling path alone pins that header and passes the values through `extra_body`; the
+extraction path stays on the current version. Sampling controls are being retired from the
+platform; this project demonstrates them on the last version that accepts them.
+
+Caches are model-scoped and thinking blocks do not transfer between models, so a conversation
+never switches model part-way through.
+
+## D12. Dates: the filing date travels in the first message — *decided 2026-10-28*
+
+Cardholders say "yesterday" or "on the 3rd". Resolving that needs today's date, but a date in
+the system prompt would change the cached prefix every day. The filing date therefore goes in
+a `<filing_date>` tag at the start of the first user message, which never changes during a
+conversation, so caching still works (the smoke run reads 4,197 cached tokens on the second
+call). The prompt allows resolving a date that the cardholder pins to one day; vague
+references ("last week") stay null. The hard `DATE_ORDER` rule uses the same filing date.
 
 ---
 
