@@ -1,4 +1,6 @@
-# Dispute Intake Assistant
+# Clerk
+
+**A dispute intake assistant.**
 
 A conversational assistant that turns a cardholder's messy complaint about a card transaction
 into a validated, structured dispute case file — asking only for what is missing and flagging

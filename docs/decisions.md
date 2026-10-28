@@ -25,6 +25,12 @@ that fits a ten-minute lab slot.
 | Lab-report generator from raw experiment notes | Fallback only. |
 | Image/audio generation, fine-tuning projects | Ruled out: no career overlap; fine-tuning too expensive for the timeline and unnecessary for the behaviour needed. |
 
+**Name — *decided 2026-10-28*: Clerk.** It names the role the assistant plays: it takes the
+complaint down, asks for what is missing, and hands the file to a human reviewer. It does not
+decide the dispute. Considered: *Casefile* (names the output, not the role), *Intake* (too
+generic), *Chargeback Clerk* ("chargeback" is narrower than "dispute"), *Nothing Invented*
+(good slide line for the zero-invention metric, too long for a name).
+
 ## D2. Domain: card disputes vs. insurance claims — *decided 2026-09-10*
 
 The same architecture works for any structured-intake domain. An **insurance first-notice-of-loss

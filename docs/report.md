@@ -1,4 +1,4 @@
-# Dispute Intake Assistant — Project Report
+# Clerk — a Dispute Intake Assistant: Project Report
 
 *Introduction to Generative AI, University of Debrecen, Fall 2026. Solo project.*
 *Skeleton created 2026-09-10; sections are filled as the corresponding tasks land. Design
