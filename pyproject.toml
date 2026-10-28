@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# tests/ has no __init__.py, so put the repo root on sys.path for `import intake`.
+pythonpath = ["."]
+testpaths = ["tests"]
