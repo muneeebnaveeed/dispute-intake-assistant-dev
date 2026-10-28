@@ -136,6 +136,12 @@ def test_valid_question_is_kept():
     assert (r.question_field, r.question) == ("transaction.date", "When was it?")
 
 
+def test_schema_root_prefix_is_tolerated():
+    s, _ = session(result(CaseFile(), field="case_file.dispute_type", text="Did you make it?"))
+    r = s.step("...")
+    assert (r.question_field, r.question) == ("dispute_type", "Did you make it?")
+
+
 def test_unknown_type_falls_back_to_asking_what_happened():
     s, _ = session(result(CaseFile()))
     r = s.step("hello")

@@ -170,9 +170,12 @@ class IntakeSession:
         # It may be an optional field (e.g. the merchant's reply), which is fine: completeness
         # is decided from the required fields alone.
         q = extracted.next_question
-        if q and q.field in FIELD_WHITELIST and get_path(self.case_file, q.field) is None:
+        # Seen live: the model sometimes prefixes the path with its schema root
+        # ("case_file.dispute_type"). Strip that one prefix; the whitelist still applies.
+        path = q.field.removeprefix("case_file.") if q else None
+        if q and path in FIELD_WHITELIST and get_path(self.case_file, path) is None:
             text = _sanitise(q.text)
             if text:
-                return q.field, text
+                return path, text
         target = self.missing_fields()[0]
         return target, FALLBACK_QUESTIONS[target]
