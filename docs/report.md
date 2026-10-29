@@ -1,9 +1,10 @@
 ---
-title: "Clerk — a Dispute Intake Assistant"
-subtitle: "Project report · Introduction to Generative AI · University of Debrecen · Fall 2026"
-author: "Muhammad Muneeb Naveed (solo project)"
-date: "October 2026"
+pagetitle: "Clerk: a Dispute Intake Assistant"
 ---
+
+```{=html}
+<div class="report-header"><div class="name">Naveed Muhammad Muneeb</div><div class="neptun">CM903S</div></div>
+```
 
 # 1. The problem
 
@@ -127,7 +128,7 @@ into its summary twice; after a prompt change and the address filter, that dropp
 Clerk only collects and flags; a person decides. Sessions are kept in memory and nothing is
 stored, so a real bank would add authentication, audit logs, data-protection-compliant storage,
 and a link to its own transaction records instead of trusting the cardholder's figures. The
-regulatory regimes are simplified labels, not legal advice. Each turn takes about 5–25 seconds.
+regulatory regimes are simplified labels, not legal advice. Each turn takes about 5 to 25 seconds.
 
 **References.** Abdelnabi, S., Fay, A., Salem, A., et al. (2025). *LLMail-Inject: A Dataset from
 a Realistic Adaptive Prompt Injection Challenge.* arXiv:2506.09956. · University of Debrecen,
