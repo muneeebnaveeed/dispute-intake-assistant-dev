@@ -5,250 +5,131 @@ author: "Muhammad Muneeb Naveed (solo project)"
 date: "October 2026"
 ---
 
-# 1. Problem and motivation
+# 1. The problem
 
-When a cardholder disputes a card payment, the first step is *intake*: the issuing bank has to
-turn a complaint such as "someone charged me 180 euros at a shop I've never heard of" into a
-case it can act on. That needs a fixed set of facts that depends on the kind of dispute: the
-merchant, amount, currency and date; whether the card is still in the cardholder's possession;
-whether anyone else was allowed to use it; whether the merchant was contacted. Cardholders
-rarely volunteer all of these, often state them vaguely, and sometimes contradict themselves.
-A human agent spends the call asking for what is missing and noticing what does not add up.
+When a cardholder disputes a card payment, the bank first has to turn a complaint such as
+"someone charged me 180 euros at a shop I've never heard of" into a case it can act on. That
+needs a fixed set of facts that depends on the kind of dispute: merchant, amount, date, whether
+the card is still in the cardholder's hands, whether anyone else was allowed to use it, whether
+the merchant was contacted. People rarely give all of these at once, state some vaguely, and
+sometimes contradict themselves. **Clerk** holds that conversation: it reads the cardholder's own
+words, builds a structured case file, asks one plain question at a time for what is missing, and
+flags inconsistencies for a human reviewer. It never decides the dispute itself.
 
-**Clerk** automates that conversation. It reads the cardholder's own words, fills a structured
-case file, asks one plain-language question at a time for whatever is still missing, and flags
-inconsistencies for a human reviewer. It does not decide the dispute, which stays with a person.
-Large language models are good at the part that is hard to code (understanding free text in any
-phrasing, including Hungarian) and bad at the part that must be trustworthy (never guessing a
-fact, applying fixed rules the same way every time). The design follows from that split.
+# 2. Design principle: the model extracts, the rules decide
 
-The domain comes from my work and my thesis, an issuer-side dispute-resolution engine. This
-project borrows only the domain idea: separate repository, schema and code, no shared
-interfaces (`docs/decisions.md`, D1–D3).
-
-# 2. Approach in one sentence: the model extracts, the code decides
-
-Each turn makes **one** call to Claude Opus 5.5. The model returns a schema-constrained object:
-the case file as it now stands, any contradictions it noticed (each quoting its evidence), and
-one proposed next question. Every field is optional, and anything the cardholder has not said
-must stay `null`. Everything that must be reliable is plain Python with unit tests: which fields
-each dispute type requires, whether the case is complete, which dispute regime applies, the hard
-inconsistency rules, which question is actually asked, and an 8-turn cap (D4).
-
-Alternatives considered: letting the model run the whole conversation and decide completeness
-(unverifiable and not reproducible), and an agent with tools such as `set_field` and
-`mark_complete` (every decision would still be the model's, and harder to evaluate).
+A language model is good at what is hard to program, understanding free text in any wording or
+language, and unreliable at what must be trustworthy: never guessing a fact and applying fixed
+rules the same way every time. Clerk splits the work along that line. The model only *reads and
+proposes*; deterministic rules make every decision that matters.
 
 # 3. Architecture
 
+```{=html}
+<svg viewBox="0 0 720 230" width="100%" style="font-family:Liberation Sans,Arial,sans-serif;font-size:12px" role="img" aria-label="Clerk architecture">
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#444"/></marker></defs>
+  <rect x="10" y="80" width="130" height="70" rx="10" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="75" y="108" text-anchor="middle" font-weight="bold">Web interface</text>
+  <text x="75" y="126" text-anchor="middle">chat + live case file</text>
+  <rect x="200" y="60" width="200" height="110" rx="10" fill="#fff7ed" stroke="#ea580c"/>
+  <text x="300" y="85" text-anchor="middle" font-weight="bold">Conversation manager</text>
+  <text x="300" y="105" text-anchor="middle">keeps the case file</text>
+  <text x="300" y="122" text-anchor="middle">decides what is missing</text>
+  <text x="300" y="139" text-anchor="middle">chooses the next question</text>
+  <text x="300" y="156" text-anchor="middle">decides when it is complete</text>
+  <rect x="470" y="10" width="240" height="80" rx="10" fill="#ecfdf5" stroke="#059669"/>
+  <text x="590" y="38" text-anchor="middle" font-weight="bold">Language model (Claude)</text>
+  <text x="590" y="56" text-anchor="middle">reads the conversation, proposes</text>
+  <text x="590" y="72" text-anchor="middle">facts, contradictions, a question</text>
+  <rect x="470" y="140" width="240" height="80" rx="10" fill="#f1f5f9" stroke="#475569"/>
+  <text x="590" y="168" text-anchor="middle" font-weight="bold">Rules</text>
+  <text x="590" y="186" text-anchor="middle">required facts per dispute type,</text>
+  <text x="590" y="202" text-anchor="middle">dispute regime, consistency checks</text>
+  <line x1="140" y1="115" x2="198" y2="115" stroke="#444" marker-end="url(#a)"/>
+  <line x1="400" y1="90" x2="468" y2="55" stroke="#444" marker-end="url(#a)"/>
+  <line x1="468" y1="70" x2="402" y2="105" stroke="#444" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <line x1="400" y1="140" x2="468" y2="175" stroke="#444" marker-end="url(#a)"/>
+</svg>
 ```
-browser ─► Streamlit (app.py) ─► IntakeSession ───────────► extract_turn ─► Claude Opus 5.5
-                                  │ merge known fields        one structured call per turn
-                                  │ missing fields → complete?
-                                  │ question: required + still missing, else fallback
-                                  ├─ select_regime  (regime.py)
-                                  └─ hard_flags     (rules.py)
-```
 
-| Module | Role |
-|---|---|
-| `intake/schema.py` | Pydantic models. Every leaf optional. Required fields per dispute type. |
-| `intake/prompt.py` | The frozen system prompt and the wrappers that delimit cardholder text. |
-| `intake/extract.py` | The only module that calls the API: structured output, effort, caching, typed errors. |
-| `intake/session.py` | State and decisions: merge, completeness, question choice, flags, sanitising. |
-| `intake/regime.py`, `rules.py` | Pure functions: dispute regime (EU card, US card, SEPA direct debit) and four hard rules. |
-| `app.py` | Streamlit UI: chat, live case file, flags, settings sidebar, JSON export. |
-| `eval/` | 22-case golden set, scripted cardholder, deterministic scorer, LLMail-Inject replay. |
+**One turn.** The cardholder's message reaches the conversation manager, which sends the whole
+conversation to the model. The model returns a strictly structured proposal: every fact it can
+find, any contradictions it noticed (each quoting the conflicting words), and one suggested
+question. The manager merges the facts into the case file, applies the rules (which facts this
+dispute type still needs, which regulatory regime applies, hard consistency checks such as "card
+reported stolen but still in the cardholder's possession"), and either asks the next question or
+closes the case. The model's suggested question is used only if it asks for a fact that is
+actually still missing; otherwise a prepared question is asked. A conversation is capped at eight
+turns. The interface shows the case file filling in live, so a viewer sees missing facts shrink
+and flags appear as the conversation goes.
 
-**A turn.** The cardholder's message is wrapped in `<cardholder_message>` tags and appended to
-the history; the first message also carries the filing date (§4). The model re-reads the whole
-conversation and returns an `ExtractionResult`. The session merges it into the case file (a value
-once stated is never lost when a later turn leaves it out), overwrites the narrative with the
-cardholder's verbatim words, strips links and e-mail addresses from model-written text, computes
-the missing required fields, and either finishes or asks the next question. If the model's
-question targets anything other than a required, still-missing field, a pre-written question for
-the first missing field is used instead. A failed API call changes nothing, so a retry is clean.
+# 4. Prompt techniques
 
-**Demo.** The left pane is the chat; the right pane shows the dispute type, the regime, a
-checklist of required fields filling in, and the reviewer flags, all updated every turn. A
-"model's last proposal" expander shows the raw extraction next to what the code decided.
+- **Persona:** the model acts as the intake assistant on a bank's dispute desk, with explicit
+  limits: no decisions, advice or promises.
+- **Few-shot:** two worked examples, one showing unstated facts left empty and one showing an
+  explicit "no" recorded as a no.
+- **3C principle.** *Clarity:* definitions of the six dispute types, and the central rule "record
+  a fact only if the cardholder stated it; never guess an amount, date or yes/no answer".
+  *Context:* the role and the filing date, so "yesterday" becomes a real date while "a while ago"
+  stays empty. *Constraints:* one question per turn, plain language, and a fixed output structure
+  enforced by the API.
+- **Iterative refinement:** every prompt change was triggered by an observed failure and measured
+  afterwards (§6, §7).
 
-# 4. Prompt design
+The model reasons internally before answering, with the depth set by an *effort* parameter. An
+attempt to make that reasoning visible as part of the output was refused by the model's safety
+system and was dropped.
 
-The course's prompt-engineering material names zero-shot, one-shot, few-shot, persona and chain
-of thought as the core techniques, together with the **3C principle** (Clarity, Context,
-Constraints) and iterative refinement. Clerk uses:
+# 5. Parameters and error handling
 
-- **Persona.** "You are the intake assistant on a card issuer's dispute desk", with explicit
-  limits: it does not decide the dispute, give advice or promise outcomes.
-- **Few-shot.** Two worked examples. The first shows a messy complaint where most fields must
-  stay `null` ("last week" is not one day, so the date stays empty); the second shows an explicit
-  "I haven't contacted them" recorded as `false`, not `null`. Example values never appear in the
-  eval cases, so the examples cannot leak answers.
-- **Clarity.** Definitions of the six dispute types, and the central **null rule**: *"Fill a field
-  only when the cardholder has stated it. If it is not stated, leave it null. Never infer
-  amounts, dates, or yes/no answers."* A nullable schema gives the model a legal way to say "not
-  stated" for every field.
-- **Context.** The role, the dispute types, and the **filing date**, which lets "yesterday" become
-  a real date. The date travels in a `<filing_date>` tag in the first user message, not in the
-  system prompt: a date in the system prompt would change it every day and defeat prompt caching
-  (D12). Vague references such as "a while ago" stay `null`.
-- **Constraints.** Exactly one question per turn, plain language, the answer as a dotted field
-  path, and a JSON schema enforced by structured output (constrained decoding, which guarantees
-  shape but not truth; the eval measures truth).
-- **Iterative refinement, measured.** Each prompt change below was driven by an observed failure
-  and checked afterwards: the field-path format ("case_file.dispute_type" seen live), the
-  payment-method wording (eval v1), and the free-text rule for quoted messages (LLMail-Inject v1).
+The interface exposes the model's thinking effort, the maximum response length and the turn cap.
+Because the main model does not accept sampling settings, a second model can be selected to
+demonstrate *temperature* and *top-p*. Low temperature suits extraction, since the same complaint
+should always give the same case file. Rate limits, timeouts and connection failures are retried
+automatically and then shown as a readable message with a retry button; empty input is rejected
+before anything is sent; a failed turn leaves the conversation unchanged.
 
-Supporting techniques: delimiting untrusted input (spotlighting), grounded contradiction
-detection (every semantic flag must quote the conflicting statements), and prompt caching of the
-≈4,700-token system prompt (the second request reads it from cache: about 5 s instead of 24 s).
+# 6. Evaluation
 
-**Chain of thought.** Opus 5.5 always reasons before answering (adaptive thinking); the depth is
-set with `effort` rather than by writing "think step by step". I also tried an explicit,
-visible version: a required `reasoning` field placed first in the output schema, since output is
-generated in field order. Opus 5.5 refused the request (`stop_reason: "refusal"`) on the plain
-smoke-test complaint, most likely because its safety classifiers treat requests to write out its
-reasoning as reasoning extraction. Without the field the same request succeeds, so it was reverted
-and recorded as a negative result (decisions record, open questions).
+Clerk was tested on 22 hand-written cases: every dispute type, one case per consistency rule,
+three "traps" in which a date is never given, foreign cards, direct debits, one complaint in
+Hungarian, one that changes its dispute type halfway, and two prompt-injection attempts. A
+scripted cardholder answers only what it is asked and says "I don't know" otherwise, so any fact
+that appears without being stated was invented. Results are compared exactly against the expected
+case files, without a second model acting as judge.
 
-# 5. Parameters
-
-All settings live in `intake/config.py`, can be overridden by environment variables, and are
-shown in the sidebar, locked once a conversation starts because prompt caches are per model.
-
-| Parameter | Where | Effect |
+| | First run | After one revision |
 |---|---|---|
-| `effort` (low…max) | Opus 5.5 | How much the model thinks before answering. Default `medium`. |
-| `max_tokens` | both | Upper bound on the response; the eval runs at 16,000 so answers are never cut. |
-| `temperature` | Sonnet 4.6 | Scales the next-token distribution: 0 is near-greedy, 1 is as trained. |
-| `top_p` | Sonnet 4.6 | Samples only from the smallest set of tokens whose probability reaches *p*. |
-| turn cap, timeout, retries | session / client | 8 turns; 90 s timeout; 2 automatic retries. |
+| Facts extracted correctly | 98.6% | **100%** |
+| Invented facts | 0 | **0** |
+| Correct regime / all required facts collected | 20 / 18 of 22 | **22 / 22 of 22** |
+| Consistency flags found (precision / recall) | 100% / 100% | 100% / 100% |
 
-Opus 5.5 does not accept sampling parameters, so the sidebar offers a second path on Claude
-Sonnet 4.6, same prompt and schema, with temperature and top_p (D11). A finding while building
-it: the current API version (`2026-10-21`, sent by the SDK) rejects `temperature` on *every*
-model, including Sonnet 4.6. The older version `2023-06-01` still accepts it, so the sampling path
-pins that version for its own requests. Low temperature is the right setting for extraction (the
-same complaint should give the same case file); temperature is shown to demonstrate the
-parameter, not because extraction benefits from it.
+Reading every miss in the first run showed that questions about *optional* facts were using up the
+eight turns before required ones were asked, and that "a charge on my card" was not read as a card
+payment. One revision fixed both. Limits: one run per version, and the cases are self-written,
+not real complaints, so the result shows the design works rather than that it generalises.
 
-# 6. Error handling
+# 7. Safety: prompt injection
 
-| Situation | Handling |
-|---|---|
-| Rate limit, timeout, connection error | Retried twice by the SDK with backoff, then a readable message and a "Retry last message" button. |
-| Empty or blank input | Refused by the chat box, and again by `IntakeSession.step` before any API call. |
-| Invalid API key, other API errors | A message naming the cause; no traceback. |
-| Refusal, output cut off by `max_tokens`, output failing validation | Separate messages; out-of-range values (e.g. a negative amount) fail Pydantic validation. |
-| Any failure mid-conversation | The session is left unchanged, so retrying never duplicates a message. |
+Complaints often quote merchant e-mails, so the cardholder's text is treated strictly as data:
+it is clearly separated from the instructions, the model can only fill a fixed structure, every
+decision is made by the rules, links and e-mail addresses are removed from anything the model
+writes, and attempts are flagged for the reviewer. Clerk was tested with 35 real attacks from
+Microsoft's public LLMail-Inject challenge, each one chosen because it had beaten that challenge's
+defended e-mail assistant. All 35 were detected in every run, no facts were invented, and genuine
+complaint details stayed intact. In the first run the model copied an attacker's e-mail address
+into its summary twice; after a prompt change and the address filter, that dropped to zero.
 
-All of these are unit-tested with a fake client; a forced timeout (`TIMEOUT_S=0.5`) was also
-checked in the browser.
+# 8. Limitations
 
-# 7. Evaluation
+Clerk only collects and flags; a person decides. Sessions are kept in memory and nothing is
+stored, so a real bank would add authentication, audit logs, data-protection-compliant storage,
+and a link to its own transaction records instead of trusting the cardholder's figures. The
+regulatory regimes are simplified labels, not legal advice. Each turn takes about 5–25 seconds.
 
-**Set-up.** 22 hand-written cases: at least three per dispute type, one per hard rule, three
-"invention traps" in which a date is never given, two SEPA direct debits, two US-issued cards, one
-in Hungarian, one that starts with the wrong dispute type and corrects itself, and two prompt
-injections. A scripted cardholder replays each case against the real session: it answers only the
-field Clerk asks about and says "I don't know" otherwise, so a value appearing for an unanswered
-field was invented. The labels list only stated facts; every other field must stay empty. A unit
-test recomputes each label's regime and hard flags with the real `regime.py` and `rules.py`, so
-the labels cannot drift from the code.
-
-**Scoring** is exact comparison, not an LLM judge: the outputs are structured, so a judge would
-add cost and a second source of error (D8). Metrics: field accuracy, *invented* values (the
-hallucination measure), missed and wrong values, flag precision/recall (hard rules and injection),
-regime, completion, turns.
-
-| Metric | v1 | v2 |
-|---|---|---|
-| Field accuracy | 98.6% | **100%** |
-| Invented values | 0 | **0** |
-| Missed values | 5 | **0** |
-| Flag precision / recall | 100% / 100% | 100% / 100% |
-| Regime correct | 20/22 | **22/22** |
-| Required fields collected (where possible) | 18/22 | **22/22** |
-| Mean turns | 5.8 | 5.4 |
-
-**Error analysis of v1.** Every miss was read in its transcript. (1) In the unauthorized cases the
-model asked about *optional* fields (e.g. "have you disputed this merchant before?"), which used
-up the 8-turn cap before required fields were asked: four cases incomplete, two regimes
-undetermined. I had allowed such questions when building the session; the evidence reversed that
-decision, and the session now accepts the model's question only for a required, missing field.
-(2) "A charge on my card" was not read as a card payment; one prompt line fixed it.
-
-**Disclosure.** v1 as run counted one invented value: "*my* electricity company Voltaria" was
-recorded as recognising the merchant. That follows from the prompt's own rule ("a statement that
-plainly means it"), so it was a labelling problem. The field is unscored in the three cases worded
-that way, and v1 is reported re-scored with the final labels (`eval/results-v1-rescored.md`; the
-raw run is kept in `results-v1.md`).
-
-**Limits of the evaluation.** One run per version, and the model is not deterministic. The cases
-are self-written, by the author of the prompt, and are not real complaints. The result shows that
-the design works on these cases, not that it generalises.
-
-# 8. Security: prompt injection
-
-Cardholder text is untrusted input placed inside a prompt, and complaints often quote merchant
-e-mails, so injection is a real threat. Defences, cheapest first: instructions only in the system
-block; every cardholder message wrapped in `<cardholder_message>` tags and declared as data (a
-message cannot close its own tag); schema-constrained output with no free-text channel; all
-decisions in code, so an injection cannot mark a case complete or change the regime; the model's
-output validated as untrusted too (field whitelist, enum, date and range checks, question length
-capped and shown as plain text, links and e-mail addresses removed from free-text fields); the
-narrative set by code; an `INSTRUCTION_IN_INPUT` flag so attempts are visible; no tools, so nothing
-can be triggered.
-
-**Test with real attacks.** From Microsoft's public LLMail-Inject challenge (arXiv 2506.09956) I
-sampled 3,000 submissions and kept the 35 unique attacks that had *succeeded* against the
-challenge's defended e-mail assistant, making it send an e-mail to the attacker undetected. Each
-was replayed against Clerk twice: as the cardholder's whole message, and pasted into a genuine
-complaint as "the merchant's reply".
-
-| Run | Framing | Flagged | Fields invented | Genuine facts intact | Attacker address in model output / final case file |
-|---|---|---|---|---|---|
-| v1 | direct | 35/35 | 0/35 | n/a | 0/35 / 0/35 |
-| v1 | indirect | 35/35 | 0/35 | 35/35 | 2/35 / 2/35 |
-| v2 | indirect | 35/35 | 0/35 | 35/35 | **0/35 / 0/35** |
-
-The attackers' goal is impossible by construction, as Clerk cannot send anything. In v1 the model
-twice copied the attacker's address into its summary of the merchant's reply. v2 added two layers:
-the prompt defines that field as the merchant's *position* in the model's own words and forbids
-copying anything from quoted messages, which alone brought leaks to zero; and the session now
-removes e-mail addresses (including spaced-out ones) and links from all model-written free text,
-which guarantees the result even when the model does not comply. The two eval injections were also
-flagged with no fields filled from the instruction.
-
-# 9. Limitations and ethics
-
-- **The model only proposes.** Clerk collects facts and flags doubts; a human decides. A wrong
-  extraction costs a reviewer's time, not a cardholder's money.
-- **Single provider.** Everything depends on one model family; the safety refusal described in
-  §4 shows that model behaviour can change what a design is allowed to do.
-- **No personal-data handling.** Sessions live in memory and vanish on restart; nothing is logged.
-  A real issuer would need authentication, an audit log, retention rules and GDPR-compliant
-  storage, and would connect to its transaction records instead of trusting the cardholder's
-  figures.
-- **Regimes are simplified labels**, not legal advice.
-- **Cost and latency.** About 5–25 s per turn; the 22-case eval costs a few dollars.
-
-# 10. Future work
-
-A reviewer screen that shows the transcript, flags and evidence side by side; prefilling from the
-bank's transaction record so the cardholder only confirms; evaluation on real, anonymised
-complaints and on more languages; repeated eval runs to report spread.
-
-# 11. References
-
-- Anthropic. *Claude API documentation*: structured outputs, prompt caching, adaptive thinking
-  and effort, refusals and fallbacks. platform.claude.com/docs
-- Abdelnabi, S., Fay, A., Salem, A., et al. (2025). *LLMail-Inject: A Dataset from a Realistic
-  Adaptive Prompt Injection Challenge.* arXiv:2506.09956. Dataset:
-  huggingface.co/datasets/microsoft/llmail-inject-challenge (MIT)
-- University of Debrecen, *Introduction to Generative AI* (Fall 2026): project grading criteria;
-  "Introduction to Generative Artificial Intelligence: The Basics of Prompt Engineering".
-- Directive (EU) 2015/2366 (PSD2), Art. 73, on refunds for unauthorised payment transactions.
-- Source code, eval data and results: the project repository (`README.md`, `docs/decisions.md`,
-  `eval/`).
+**References.** Abdelnabi, S., Fay, A., Salem, A., et al. (2025). *LLMail-Inject: A Dataset from
+a Realistic Adaptive Prompt Injection Challenge.* arXiv:2506.09956. · University of Debrecen,
+*Introduction to Generative AI* (Fall 2026): grading criteria and "The Basics of Prompt
+Engineering". · Anthropic, Claude API documentation.
