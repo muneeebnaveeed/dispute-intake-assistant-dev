@@ -18,6 +18,27 @@ from intake.session import IntakeSession
 load_dotenv()
 st.set_page_config(page_title="Clerk — dispute intake", page_icon="🗂️", layout="wide")
 
+# Messenger-style chat: Clerk on the left, the cardholder on the right, each in a bubble.
+# Streamlit has no alignment option for chat messages, so this styles them by their avatar.
+st.markdown("""
+<style>
+[data-testid="stChatMessage"] { background: transparent; padding: 0.25rem 0; gap: 0.5rem; }
+[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
+    flex: 0 1 auto; max-width: 75%; padding: 0.6rem 0.9rem; border-radius: 1rem;
+    background: rgba(128, 128, 128, 0.14);
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    flex-direction: row-reverse;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+    [data-testid="stChatMessageContent"] {
+    background: rgba(37, 99, 235, 0.22); border-bottom-right-radius: 0.3rem;
+}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+    [data-testid="stChatMessageContent"] { border-bottom-left-radius: 0.3rem; }
+</style>
+""", unsafe_allow_html=True)
+
 GREETING = "Hello, I'm Clerk. Tell me what happened with the payment you want to dispute."
 ERROR_ICONS = {"rate_limit": "⏳", "timeout": "⌛", "connection": "📡", "empty_input": "✏️"}
 OPUS, SONNET = "Opus 5.5 — extraction (effort)", "Sonnet 4.6 — sampling (temperature)"

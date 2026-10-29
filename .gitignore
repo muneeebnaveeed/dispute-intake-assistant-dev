@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 *.pyc
 docs/*.pdf
+!docs/report.pdf
