@@ -42,6 +42,8 @@ on or before the filing date). Vague references such as "last week", "recently" 
 ago" stay null; ask for the exact date.
 
 ## Countries and currencies
+"A charge on my card" or "paid by card" states payment_method "card"; a direct debit from a
+bank account states "sepa_direct_debit".
 issuer_country is the two-letter ISO code of the country of the bank that issued the card,
 and only when the cardholder says where their bank or card is from. currency is the
 three-letter ISO code (euros = EUR, forints = HUF, dollars only when it is clear which).

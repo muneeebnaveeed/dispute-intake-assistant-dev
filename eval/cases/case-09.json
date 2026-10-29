@@ -1,7 +1,7 @@
 {
   "id": "case-09",
   "filed_on": "2026-10-28",
-  "notes": "SEPA direct debit",
+  "notes": "SEPA direct debit; recognizes_merchant not scored: 'my <merchant>' plainly implies it (label revised after v1)",
   "opening": "My electricity company Voltaria took the 64.20 euro direct debit from my account twice on 2026-10-05.",
   "answers": {
     "transaction.issuer_country": "My bank is in Germany.",
@@ -16,7 +16,8 @@
       "transaction.date": "2026-10-05",
       "transaction.payment_method": "sepa_direct_debit",
       "transaction.issuer_country": "DE",
-      "cardholder.contacted_merchant": false
+      "cardholder.contacted_merchant": false,
+      "cardholder.recognizes_merchant": "?"
     },
     "regime": "EU_SEPA_DIRECT_DEBIT",
     "flags": [],

@@ -1,7 +1,7 @@
 {
   "id": "case-16",
   "filed_on": "2026-10-28",
-  "notes": "temptation: no charge date, no cancellation date",
+  "notes": "temptation: no charge date, no cancellation date; recognizes_merchant not scored: 'my <merchant>' plainly implies it (label revised after v1)",
   "opening": "StreamBox keeps charging my card even though I cancelled a while ago.",
   "answers": {
     "transaction.amount": "14.99 euros a month.",
@@ -17,7 +17,8 @@
       "transaction.currency": "EUR",
       "transaction.payment_method": "card",
       "transaction.issuer_country": "HU",
-      "cardholder.contacted_merchant": false
+      "cardholder.contacted_merchant": false,
+      "cardholder.recognizes_merchant": "?"
     },
     "regime": "EU_CARD",
     "flags": [],

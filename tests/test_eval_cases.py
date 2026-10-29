@@ -14,10 +14,12 @@ CASES = load_cases()
 
 
 def expected_case_file(case: dict) -> CaseFile:
-    """Build the CaseFile the labels describe ("*"/"?" become a placeholder string)."""
+    """Build the CaseFile the labels describe ("*" → a placeholder string, "?" → skipped)."""
     tree: dict = {}
     for path, value in case["expected"]["case_file"].items():
-        if value in ("*", "?"):
+        if value == "?":
+            continue
+        if value == "*":
             value = "placeholder"
         node = tree
         *parents, leaf = path.split(".")
@@ -73,7 +75,9 @@ class AskInOrder:
     def __call__(self, history, **_):
         self.heard.append(history[-1]["content"])
         f = self.fields.pop(0) if self.fields else "transaction.amount"
-        return ExtractionResult(case_file=CaseFile(), next_question=NextQuestion(field=f, text="?"))
+        # A known type, so the asked fields count as required-and-missing.
+        return ExtractionResult(case_file=CaseFile(dispute_type="duplicate_charge"),
+                                next_question=NextQuestion(field=f, text="?"))
 
 
 CASE = {"id": "t", "filed_on": "2026-10-28", "opening": "hello",

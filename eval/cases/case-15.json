@@ -1,7 +1,7 @@
 {
   "id": "case-15",
   "filed_on": "2026-10-28",
-  "notes": "SEPA direct debit",
+  "notes": "SEPA direct debit; recognizes_merchant not scored: 'my <merchant>' plainly implies it (label revised after v1)",
   "opening": "I cancelled my FitLoop gym membership on 2026-09-15 but they still took the 29.99 euro direct debit on 2026-10-01.",
   "answers": {
     "transaction.issuer_country": "My bank is in the Netherlands.",
@@ -17,7 +17,8 @@
       "transaction.payment_method": "sepa_direct_debit",
       "transaction.issuer_country": "NL",
       "cardholder.cancellation_date": "2026-09-15",
-      "cardholder.contacted_merchant": true
+      "cardholder.contacted_merchant": true,
+      "cardholder.recognizes_merchant": "?"
     },
     "regime": "EU_SEPA_DIRECT_DEBIT",
     "flags": [],

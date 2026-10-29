@@ -186,14 +186,14 @@ class IntakeSession:
         return StepResult(question, field_, False)
 
     def _choose_question(self, extracted: ExtractionResult) -> tuple[str, str]:
-        # Keep the model's question only if it targets a real field that is still empty.
-        # It may be an optional field (e.g. the merchant's reply), which is fine: completeness
-        # is decided from the required fields alone.
+        # Keep the model's question only if it targets a required field that is still missing.
+        # Eval v1 showed why: questions about optional fields ("have you disputed this merchant
+        # before?") used up the turn cap before required ones were asked.
         q = extracted.next_question
         # Seen live: the model sometimes prefixes the path with its schema root
         # ("case_file.dispute_type"). Strip that one prefix; the whitelist still applies.
         path = q.field.removeprefix("case_file.") if q else None
-        if q and path in FIELD_WHITELIST and get_path(self.case_file, path) is None:
+        if q and path in FIELD_WHITELIST and path in self.missing_fields():
             text = _scrub(q.text)
             if text:
                 return path, text

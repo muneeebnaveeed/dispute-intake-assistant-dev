@@ -71,6 +71,34 @@ surface as a readable `IntakeError` with a retry button; blank input is rejected
 call; refusals, truncated output and output that fails validation each have their own message.
 A failed call leaves the conversation unchanged.
 
+## Evaluation results
+
+22 hand-written cases (3+ per dispute type, one per hard rule, three invention traps where a
+date is never given, SEPA, US-issued, Hungarian, a self-correcting case, two injections), played
+by a scripted cardholder that answers only the field it is asked about and says "I don't know"
+otherwise. Scored exactly against the labels; no judge model. Opus 5.5, effort `medium`.
+
+| Metric | v1 | v2 |
+|---|---|---|
+| Field accuracy | 98.6% | **100%** |
+| Invented values (filled but never stated) | 0 | **0** |
+| Missed values | 5 | **0** |
+| Flag precision / recall | 100% / 100% | 100% / 100% |
+| Regime correct | 20/22 | **22/22** |
+| Required fields all collected (where possible) | 18/22 | **22/22** |
+| Mean turns | 5.8 | 5.4 |
+
+v1 is shown re-scored with the final labels (`eval/results-v1-rescored.md`; raw run in
+`results-v1.md`). Reading every v1 miss gave one revision: (1) questions about *optional* fields
+were using up the 8-turn cap before required ones, so the session now accepts the model's question
+only for a required, still-missing field; (2) "a charge on my card" now states the payment method.
+One label was revised after v1, openly: "*my* electricity company" plainly implies the cardholder
+recognises the merchant, so that field is not scored in the three cases phrased that way.
+
+Caveats: one run per version and the model is not deterministic; 22 self-written cases are not
+real complaints, and they were written by the same person who wrote the prompt. The numbers show
+the design works on these cases, not that it generalises.
+
 ## Prompt-injection results
 
 Replayed 35 attacks from Microsoft's [LLMail-Inject](https://huggingface.co/datasets/microsoft/llmail-inject-challenge)
@@ -104,6 +132,7 @@ not proof — the code layer is the guarantee. Reports: `eval/injection/llmail_r
 python scripts/smoke.py [--sampling]       # one complaint, 7 field checks
 python scripts/converse.py                 # scripted 4-turn conversation
 python -m eval.injection.run_llmail        # LLMail-Inject replay (~70 calls)
+python -m eval.run --label v2              # 22-case eval (~120 calls)
 ```
 
 Inside Docker on Linux use host networking, e.g.

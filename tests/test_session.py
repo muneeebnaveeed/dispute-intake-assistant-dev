@@ -129,6 +129,13 @@ def test_question_outside_whitelist_is_replaced(field):
     assert r.question_field == "transaction.merchant_name"
 
 
+def test_question_about_optional_field_is_replaced_by_a_required_one():
+    s, _ = session(result(CaseFile(dispute_type="duplicate_charge"),
+                          field="cardholder.disputed_this_merchant_before", text="Before?"))
+    r = s.step("...")
+    assert r.question_field == "transaction.merchant_name"
+
+
 def test_valid_question_is_kept():
     s, _ = session(result(CaseFile(dispute_type="duplicate_charge"),
                           field="transaction.date", text="When was it?"))
