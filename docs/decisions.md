@@ -176,7 +176,13 @@ references ("last week") stay null. The hard `DATE_ORDER` rule uses the same fil
 ---
 
 ## Open questions
-- Does an in-band `reasoning` field placed first in the schema (a manual chain-of-thought
-  variant) improve extraction accuracy? *Planned as the v2 experiment if v1 leaves headroom.*
+- ~~Does an in-band `reasoning` field placed first in the schema (a manual chain-of-thought
+  variant) improve extraction accuracy?~~ *Tried 2026-10-29 and reverted:* with a required
+  `reasoning` field first in `ExtractionResult`, Opus 5.5 returned `stop_reason: "refusal"` on
+  the plain smoke-test complaint, and the server-side fallback did not recover it. Without the
+  field the same request passes 7/7. Most likely cause: Opus 5.5's safety classifiers decline
+  requests that look like extracting its reasoning. Chain of thought stays in its built-in form,
+  adaptive thinking tuned by `effort`; a summarised view of it (`display: "summarized"`) is the
+  supported way to make it visible.
 - Does an English system prompt extract correctly from Hungarian text with no changes?
   *One eval case tests this.*
