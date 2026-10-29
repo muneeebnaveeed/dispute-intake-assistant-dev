@@ -1,0 +1,26 @@
+{
+  "id": "case-10",
+  "filed_on": "2026-10-28",
+  "notes": "Hungarian",
+  "opening": "Kétszer vonták le ugyanazt a 12990 forintos összeget a Zöldkert Kft.-nél 2026-10-20-án, pedig csak egyszer vásároltam.",
+  "answers": {
+    "transaction.payment_method": "Bankkártyával fizettem.",
+    "transaction.issuer_country": "Magyar bankom van, az OTP.",
+    "cardholder.contacted_merchant": "Nem, még nem."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "duplicate_charge",
+      "transaction.merchant_name": "Zöldkert Kft.",
+      "transaction.amount": 12990,
+      "transaction.currency": "HUF",
+      "transaction.date": "2026-10-20",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.contacted_merchant": false
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

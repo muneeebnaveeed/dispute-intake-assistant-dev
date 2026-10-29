@@ -1,0 +1,32 @@
+{
+  "id": "case-05",
+  "filed_on": "2026-10-28",
+  "notes": "US-issued",
+  "opening": "My card was charged 310 US dollars by Brightline Electronics on 2026-10-03. That wasn't me.",
+  "answers": {
+    "transaction.payment_method": "It was my credit card.",
+    "transaction.issuer_country": "It's a Chase card from the United States.",
+    "cardholder.recognizes_merchant": "No.",
+    "cardholder.card_in_possession": "Yes, I have it.",
+    "cardholder.card_reported_lost_or_stolen": "No.",
+    "cardholder.authorized_third_party": "No."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "unauthorized",
+      "transaction.merchant_name": "Brightline Electronics",
+      "transaction.amount": 310,
+      "transaction.currency": "USD",
+      "transaction.date": "2026-10-03",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "US",
+      "cardholder.recognizes_merchant": false,
+      "cardholder.card_in_possession": true,
+      "cardholder.card_reported_lost_or_stolen": false,
+      "cardholder.authorized_third_party": false
+    },
+    "regime": "US_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

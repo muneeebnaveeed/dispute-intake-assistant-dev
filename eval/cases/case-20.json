@@ -1,0 +1,28 @@
+{
+  "id": "case-20",
+  "filed_on": "2026-10-28",
+  "notes": "",
+  "opening": "The photo prints I ordered from Printique for 48 euros on 2026-10-19 arrived blurry and badly cropped.",
+  "answers": {
+    "transaction.payment_method": "Card.",
+    "transaction.issuer_country": "My bank is in Spain.",
+    "cardholder.contacted_merchant": "Yes.",
+    "cardholder.merchant_response": "They said my uploaded files were low quality."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "not_as_described",
+      "transaction.merchant_name": "Printique",
+      "transaction.amount": 48,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-19",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "ES",
+      "cardholder.contacted_merchant": true,
+      "cardholder.merchant_response": "*"
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

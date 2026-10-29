@@ -1,0 +1,29 @@
+{
+  "id": "case-06",
+  "filed_on": "2026-10-28",
+  "notes": "",
+  "opening": "I paid 89 euros to Homestead Garden Supply on 2026-09-30 for a planter that was supposed to arrive by 2026-10-10. It never came.",
+  "answers": {
+    "transaction.payment_method": "By card.",
+    "transaction.issuer_country": "My bank is in Austria.",
+    "cardholder.contacted_merchant": "Yes, I emailed them twice.",
+    "cardholder.merchant_response": "They said it's in transit, but nothing has changed since."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "item_not_received",
+      "transaction.merchant_name": "Homestead Garden Supply",
+      "transaction.amount": 89,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-09-30",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "AT",
+      "cardholder.expected_delivery_date": "2026-10-10",
+      "cardholder.contacted_merchant": true,
+      "cardholder.merchant_response": "*"
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

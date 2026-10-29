@@ -1,0 +1,29 @@
+{
+  "id": "case-17",
+  "filed_on": "2026-10-28",
+  "notes": "wrong type first, corrected in the first reply",
+  "opening": "There's a 12.99 EUR charge from Cinemaxa on my card dated 2026-10-15 that I don't recognise.",
+  "first_reply": "Sorry, actually I do know them. It's my Cinemaxa subscription. I cancelled it on 2026-10-02, but they still charged me.",
+  "answers": {
+    "transaction.payment_method": "I paid with my debit card",
+    "transaction.issuer_country": "My bank is OTP, here in Hungary",
+    "cardholder.contacted_merchant": "No, I haven't contacted them."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "cancelled_recurring",
+      "transaction.merchant_name": "Cinemaxa",
+      "transaction.amount": 12.99,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-15",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.recognizes_merchant": true,
+      "cardholder.cancellation_date": "2026-10-02",
+      "cardholder.contacted_merchant": false
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

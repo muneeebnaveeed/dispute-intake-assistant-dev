@@ -1,0 +1,34 @@
+{
+  "id": "case-04",
+  "filed_on": "2026-10-28",
+  "notes": "hard rule: known merchant (low)",
+  "opening": "I didn't make this 39.90 EUR payment to Spotify on 2026-10-12.",
+  "answers": {
+    "transaction.payment_method": "I paid with my debit card",
+    "transaction.issuer_country": "My bank is OTP, here in Hungary",
+    "cardholder.recognizes_merchant": "Well, I know what Spotify is, but I don't have an account with them.",
+    "cardholder.card_in_possession": "Yes.",
+    "cardholder.card_reported_lost_or_stolen": "No.",
+    "cardholder.authorized_third_party": "No."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "unauthorized",
+      "transaction.merchant_name": "Spotify",
+      "transaction.amount": 39.9,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-12",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.recognizes_merchant": true,
+      "cardholder.card_in_possession": true,
+      "cardholder.card_reported_lost_or_stolen": false,
+      "cardholder.authorized_third_party": false
+    },
+    "regime": "EU_CARD",
+    "flags": [
+      "KNOWN_MERCHANT"
+    ],
+    "complete": true
+  }
+}

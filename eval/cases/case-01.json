@@ -1,0 +1,32 @@
+{
+  "id": "case-01",
+  "filed_on": "2026-10-28",
+  "notes": "clean unauthorized",
+  "opening": "There's a 249 euro charge from Lumora Tech on my card dated 2026-10-21 and I've never bought anything from them.",
+  "answers": {
+    "transaction.payment_method": "I paid with my debit card",
+    "transaction.issuer_country": "My bank is OTP, here in Hungary",
+    "cardholder.recognizes_merchant": "No, I've never heard of them.",
+    "cardholder.card_in_possession": "Yes, it's in my wallet.",
+    "cardholder.card_reported_lost_or_stolen": "No, I haven't reported anything.",
+    "cardholder.authorized_third_party": "No, nobody else uses my card."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "unauthorized",
+      "transaction.merchant_name": "Lumora Tech",
+      "transaction.amount": 249,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-21",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.recognizes_merchant": false,
+      "cardholder.card_in_possession": true,
+      "cardholder.card_reported_lost_or_stolen": false,
+      "cardholder.authorized_third_party": false
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

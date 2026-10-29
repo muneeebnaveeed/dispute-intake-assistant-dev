@@ -1,0 +1,28 @@
+{
+  "id": "case-12",
+  "filed_on": "2026-10-28",
+  "notes": "",
+  "opening": "Café Morro charged my card 54 euros on 2026-10-26 but my bill was only 45 euros.",
+  "answers": {
+    "transaction.payment_method": "I paid with my debit card",
+    "transaction.issuer_country": "My bank is OTP, here in Hungary",
+    "cardholder.contacted_merchant": "Yes, I called them.",
+    "cardholder.merchant_response": "They said they would look into it."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "wrong_amount",
+      "transaction.merchant_name": "Café Morro",
+      "transaction.amount": 54,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-26",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.contacted_merchant": true,
+      "cardholder.merchant_response": "*"
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

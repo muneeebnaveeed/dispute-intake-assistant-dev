@@ -1,0 +1,30 @@
+{
+  "id": "case-13",
+  "filed_on": "2026-10-28",
+  "notes": "hard rule: transaction after filing date",
+  "opening": "Hotel Aurelia charged my card 380 euros instead of the 320 we agreed. The charge is dated 2026-11-02.",
+  "answers": {
+    "transaction.payment_method": "Card.",
+    "transaction.issuer_country": "My bank is Italian.",
+    "cardholder.contacted_merchant": "Yes.",
+    "cardholder.merchant_response": "They refused to refund the difference."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "wrong_amount",
+      "transaction.merchant_name": "Hotel Aurelia",
+      "transaction.amount": 380,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-11-02",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "IT",
+      "cardholder.contacted_merchant": true,
+      "cardholder.merchant_response": "*"
+    },
+    "regime": "EU_CARD",
+    "flags": [
+      "DATE_ORDER"
+    ],
+    "complete": true
+  }
+}

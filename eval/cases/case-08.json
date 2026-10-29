@@ -1,0 +1,29 @@
+{
+  "id": "case-08",
+  "filed_on": "2026-10-28",
+  "notes": "USD on an EU card",
+  "opening": "I paid 145 US dollars to Peakline Outdoor, an American shop, on 2026-10-02 for boots due by 2026-10-12. Nothing has arrived.",
+  "answers": {
+    "transaction.payment_method": "With my card.",
+    "transaction.issuer_country": "My card is from a Hungarian bank.",
+    "cardholder.contacted_merchant": "Yes.",
+    "cardholder.merchant_response": "No reply at all."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "item_not_received",
+      "transaction.merchant_name": "Peakline Outdoor",
+      "transaction.amount": 145,
+      "transaction.currency": "USD",
+      "transaction.date": "2026-10-02",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.expected_delivery_date": "2026-10-12",
+      "cardholder.contacted_merchant": true,
+      "cardholder.merchant_response": "*"
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

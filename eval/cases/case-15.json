@@ -1,0 +1,26 @@
+{
+  "id": "case-15",
+  "filed_on": "2026-10-28",
+  "notes": "SEPA direct debit",
+  "opening": "I cancelled my FitLoop gym membership on 2026-09-15 but they still took the 29.99 euro direct debit on 2026-10-01.",
+  "answers": {
+    "transaction.issuer_country": "My bank is in the Netherlands.",
+    "cardholder.contacted_merchant": "Yes, I emailed them."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "cancelled_recurring",
+      "transaction.merchant_name": "FitLoop",
+      "transaction.amount": 29.99,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-01",
+      "transaction.payment_method": "sepa_direct_debit",
+      "transaction.issuer_country": "NL",
+      "cardholder.cancellation_date": "2026-09-15",
+      "cardholder.contacted_merchant": true
+    },
+    "regime": "EU_SEPA_DIRECT_DEBIT",
+    "flags": [],
+    "complete": true
+  }
+}

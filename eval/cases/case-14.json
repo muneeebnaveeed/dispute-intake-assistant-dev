@@ -1,0 +1,28 @@
+{
+  "id": "case-14",
+  "filed_on": "2026-10-28",
+  "notes": "US-issued",
+  "opening": "RideNow charged my American Express 64 US dollars on 2026-10-15 for a ride that was quoted at 22 dollars.",
+  "answers": {
+    "transaction.payment_method": "Yes, it's a card.",
+    "transaction.issuer_country": "The card was issued in the United States.",
+    "cardholder.contacted_merchant": "Yes, through their app.",
+    "cardholder.merchant_response": "They gave me a 5 dollar credit, nothing more."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "wrong_amount",
+      "transaction.merchant_name": "RideNow",
+      "transaction.amount": 64,
+      "transaction.currency": "USD",
+      "transaction.date": "2026-10-15",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "US",
+      "cardholder.contacted_merchant": true,
+      "cardholder.merchant_response": "*"
+    },
+    "regime": "US_CARD",
+    "flags": [],
+    "complete": true
+  }
+}

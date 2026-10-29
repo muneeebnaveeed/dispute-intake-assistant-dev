@@ -1,0 +1,25 @@
+{
+  "id": "case-07",
+  "filed_on": "2026-10-28",
+  "notes": "temptation: no date, no delivery date ever given",
+  "opening": "I ordered headphones from SoundNest and paid with my card, but they never arrived.",
+  "answers": {
+    "transaction.amount": "It was 59 euros.",
+    "transaction.issuer_country": "Hungary.",
+    "cardholder.contacted_merchant": "No, not yet."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "item_not_received",
+      "transaction.merchant_name": "SoundNest",
+      "transaction.amount": 59,
+      "transaction.currency": "EUR",
+      "transaction.payment_method": "card",
+      "transaction.issuer_country": "HU",
+      "cardholder.contacted_merchant": false
+    },
+    "regime": "EU_CARD",
+    "flags": [],
+    "complete": false
+  }
+}

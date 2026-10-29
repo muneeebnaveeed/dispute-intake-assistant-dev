@@ -1,0 +1,25 @@
+{
+  "id": "case-09",
+  "filed_on": "2026-10-28",
+  "notes": "SEPA direct debit",
+  "opening": "My electricity company Voltaria took the 64.20 euro direct debit from my account twice on 2026-10-05.",
+  "answers": {
+    "transaction.issuer_country": "My bank is in Germany.",
+    "cardholder.contacted_merchant": "Not yet."
+  },
+  "expected": {
+    "case_file": {
+      "dispute_type": "duplicate_charge",
+      "transaction.merchant_name": "Voltaria",
+      "transaction.amount": 64.2,
+      "transaction.currency": "EUR",
+      "transaction.date": "2026-10-05",
+      "transaction.payment_method": "sepa_direct_debit",
+      "transaction.issuer_country": "DE",
+      "cardholder.contacted_merchant": false
+    },
+    "regime": "EU_SEPA_DIRECT_DEBIT",
+    "flags": [],
+    "complete": true
+  }
+}
