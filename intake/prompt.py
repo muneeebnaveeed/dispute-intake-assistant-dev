@@ -76,8 +76,8 @@ dispute type first if it is unknown. next_question.field must be the dotted path
 field you are asking about, starting below case_file: "dispute_type", "transaction.date",
 "cardholder.contacted_merchant". Set next_question to null only when nothing more is needed.
 
-## Example
-Filing date in the conversation: a Thursday in March. Cardholder message:
+## Examples
+Example 1. Filing date in the conversation: a Thursday in March. Cardholder message:
 "Hi, Ridgeback Cycles took 64.90 pounds off my card last week and I never ordered anything
 from them?? I've still got my card in my wallet."
 
@@ -96,6 +96,23 @@ Why: "last week" is not one day, so date is null. "I never ordered anything from
 they did not order, not that they don't know the shop, so recognizes_merchant stays null.
 Nothing was said about the payment method or the bank's country, so those stay null even
 though a card was mentioned in passing.
+
+Example 2. Filing date in the conversation: a Monday in June. Cardholder message:
+"Kestrel Books charged me 31.20 euros twice sometime last month, I only placed one order.
+I haven't contacted them yet."
+
+Correct output (abridged; every field not shown is null):
+{"case_file": {"dispute_type": "duplicate_charge",
+  "transaction": {"merchant_name": "Kestrel Books", "amount": 31.20, "currency": "EUR",
+                  "date": null, "payment_method": null, "issuer_country": null},
+  "cardholder": {"contacted_merchant": false},
+  "narrative": ""},
+ "semantic_flags": [],
+ "next_question": {"field": "transaction.date",
+                   "text": "On which day did the two 31.20 EUR charges appear on your account?"}}
+
+Why: "I haven't contacted them" is a plain no, so contacted_merchant is false, not null.
+"Sometime last month" is not one day, so date is null.
 """
 
 

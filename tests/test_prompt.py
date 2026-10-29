@@ -44,3 +44,9 @@ def test_first_turn_carries_filing_date_outside_the_wrapper():
 def test_prompt_defines_merchant_response_as_a_position():
     assert "merchant_response is the merchant's position" in SYSTEM_PROMPT
     assert "Never copy" in SYSTEM_PROMPT
+
+
+def test_prompt_is_few_shot():
+    # Two worked examples (few-shot): one shows nulls, the other an explicit "no" as false.
+    assert SYSTEM_PROMPT.count("Correct output") == 2
+    assert '"contacted_merchant": false' in SYSTEM_PROMPT

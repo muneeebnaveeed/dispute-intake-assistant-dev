@@ -52,11 +52,15 @@ code, with unit tests: which fields a dispute type requires, whether the case is
 regime applies, the hard inconsistency rules, and the 8-turn cap. The model's question is used
 only if it targets a real, still-empty field.
 
-**Prompt techniques** (`intake/prompt.py`): role prompting; explicit rules, including the
-abstention ("null") rule; a one-shot worked example that demonstrates nulls; delimiting untrusted
-input in `<cardholder_message>` tags (spotlighting); grounded contradiction detection; adaptive
-thinking tuned by effort; schema-enforced structured output; prompt caching of the frozen system
-prompt.
+**Prompt techniques** (`intake/prompt.py`), in the course's terms: **persona** (the intake
+assistant on a card issuer's dispute desk); **few-shot** (two worked examples: one shows unstated
+fields left null, the other an explicit "no" recorded as false); the **3C principle**: clarity
+(the null rule and dispute-type definitions), context (role, dispute types, the filing date) and
+constraints (one question per turn, dotted field paths, a JSON schema enforced by structured
+output); and **iterative refinement**, measured before and after (see the injection results and
+`docs/decisions.md`). Supporting techniques: delimiting untrusted input in `<cardholder_message>`
+tags, grounded contradiction detection (every flag quotes its evidence), adaptive thinking tuned
+by effort, and prompt caching of the frozen system prompt.
 
 **Parameters** (`intake/config.py`, all overridable by environment variable and shown in the
 sidebar): model, thinking effort (Opus 5.5), temperature and top_p (Sonnet 4.6 path), max_tokens,
