@@ -54,9 +54,16 @@ FALLBACK_QUESTIONS: dict[str, str] = {
     "cardholder.cancellation_date": "On which date did you cancel the subscription?",
 }
 
-MAX_QUESTION_CHARS = 300
+MAX_TEXT_CHARS = 300
 _MD_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
-_URL = re.compile(r"https?://\S+")
+_URL = re.compile(r"(?:https?://|www\.)\S+")
+# Tolerates the spacing tricks seen in LLMail-Inject attacks: "contact @ contact . com".
+_EMAIL = re.compile(r"[\w.+-]+\s*@\s*[\w-]+(?:\s*\.\s*[\w-]+)+")
+
+# String fields the model writes in its own words. Dates, currency and country are already
+# pattern- or length-checked by the schema; these are not, so code scrubs them.
+FREE_TEXT_FIELDS = ("transaction.merchant_name", "cardholder.merchant_response",
+                    "cardholder.expected_delivery_date", "cardholder.cancellation_date")
 
 
 def merge_known(prev: CaseFile, new: CaseFile) -> CaseFile:
@@ -75,11 +82,24 @@ def merge_known(prev: CaseFile, new: CaseFile) -> CaseFile:
     return CaseFile.model_validate(merge(prev.model_dump(), new.model_dump()))
 
 
-def _sanitise(text: str) -> str:
-    # The question is shown to the cardholder verbatim: no links, bounded length.
-    text = _URL.sub("", _MD_LINK.sub(r"\1", text))
+def _scrub(text: str) -> str:
+    """Model-written text is untrusted: no links, no email addresses, bounded length.
+    Removals are labelled so a reviewer can see something was there."""
+    text = _MD_LINK.sub(r"\1 [link removed]", text)
+    text = _URL.sub("[link removed]", text)
+    text = _EMAIL.sub("[email removed]", text)
     text = re.sub(r"\s+", " ", text).strip()
-    return text[:MAX_QUESTION_CHARS].rstrip()
+    return text[:MAX_TEXT_CHARS].rstrip()
+
+
+def _scrub_case(case: CaseFile) -> CaseFile:
+    case = case.model_copy(deep=True)
+    for path in FREE_TEXT_FIELDS:
+        group, name = path.split(".")
+        value = getattr(getattr(case, group), name)
+        if value is not None:
+            setattr(getattr(case, group), name, _scrub(value) or None)
+    return case
 
 
 @dataclass
@@ -153,7 +173,7 @@ class IntakeSession:
         self._texts.append(text)
         self.turns += 1
         self.last = extracted
-        self.case_file = merge_known(self.case_file, extracted.case_file)
+        self.case_file = merge_known(self.case_file, _scrub_case(extracted.case_file))
         self.case_file.narrative = "\n".join(self._texts)  # code-owned, model's value discarded
         for f in extracted.semantic_flags:
             self._semantic.setdefault(f.code, f)
@@ -174,7 +194,7 @@ class IntakeSession:
         # ("case_file.dispute_type"). Strip that one prefix; the whitelist still applies.
         path = q.field.removeprefix("case_file.") if q else None
         if q and path in FIELD_WHITELIST and get_path(self.case_file, path) is None:
-            text = _sanitise(q.text)
+            text = _scrub(q.text)
             if text:
                 return path, text
         target = self.missing_fields()[0]

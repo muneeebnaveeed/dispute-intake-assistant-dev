@@ -39,3 +39,8 @@ def test_wrapper_cannot_be_closed_from_inside():
 def test_first_turn_carries_filing_date_outside_the_wrapper():
     content = first_turn("hello", "2026-10-28")["content"]
     assert content.startswith("<filing_date>2026-10-28</filing_date>\n<cardholder_message>")
+
+
+def test_prompt_defines_merchant_response_as_a_position():
+    assert "merchant_response is the merchant's position" in SYSTEM_PROMPT
+    assert "Never copy" in SYSTEM_PROMPT

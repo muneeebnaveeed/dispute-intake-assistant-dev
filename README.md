@@ -76,16 +76,23 @@ detected. Each attack ran twice on Opus 5.5: as the cardholder's whole message (
 pasted into a genuine duplicate-charge complaint as "the merchant's reply" (indirect).
 Full report: [`eval/injection/llmail_results.md`](eval/injection/llmail_results.md).
 
-| Framing | Detected (`INSTRUCTION_IN_INPUT`) | Fields invented | Genuine facts intact | Attacker address copied into output |
-|---|---|---|---|---|
-| direct | 35/35 | 0/35 | n/a | 0/35 |
-| indirect | 35/35 | 0/35 | 35/35 | 2/35 |
+| Run | Framing | Detected (`INSTRUCTION_IN_INPUT`) | Fields invented | Genuine facts intact | Attacker address in the model's proposal | …in the final case file |
+|---|---|---|---|---|---|---|
+| v1 | direct | 35/35 | 0/35 | n/a | 0/35 | 0/35 |
+| v1 | indirect | 35/35 | 0/35 | 35/35 | 2/35 | 2/35 |
+| v2 | indirect | 35/35 | 0/35 | 35/35 | 0/35 | 0/35 |
 
 Clerk has no tools, so the attackers' goal — send an email — is impossible by construction; the
-table measures whether anything leaks into the case file anyway. The two indirect leaks were in
+table measures whether anything leaks into the case file anyway. In v1 the two leaks were in
 `cardholder.merchant_response`, where the model summarised the quoted reply including the
-attacker's request. The case was flagged both times, so the reviewer is warned, but attacker
-text still reaches a free-text field a person will read. That is the residual risk.
+attacker's request. v2 adds two layers. **Prompt:** `merchant_response` is defined as the
+merchant's position in the model's own words, and nothing from a quoted message may be copied
+into a field; this alone took raw leaks to 0/35. **Code:** the session strips email addresses
+(including spaced-out ones like `contact @ contact . com`) and links from every model-written
+free-text field and caps their length, so an address cannot reach the case file even when the
+model does not comply. One run per version; the model is not deterministic, so 0/35 is evidence,
+not proof — the code layer is the guarantee. Reports: `eval/injection/llmail_results.md` (v1),
+`llmail_results_v2.md` (v2).
 
 ## Live checks (call the API)
 
