@@ -24,8 +24,9 @@ st.markdown("""
 <style>
 [data-testid="stChatMessage"] { background: transparent; padding: 0.25rem 0; gap: 0.5rem; }
 [data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
-    flex: 0 1 auto; max-width: 75%; padding: 0.6rem 0.9rem; border-radius: 1rem;
+    flex: 0 1 auto; max-width: 70%; padding: 0.6rem 0.9rem; border-radius: 1rem;
     background: rgba(128, 128, 128, 0.14);
+    margin: 0 !important;  /* Streamlit centres the message body with auto margins */
 }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
     flex-direction: row-reverse;
