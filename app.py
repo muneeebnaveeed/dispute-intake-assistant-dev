@@ -33,10 +33,8 @@ st.markdown("""
 }
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
     [data-testid="stChatMessageContent"] {
-    background: rgba(37, 99, 235, 0.22); border-bottom-right-radius: 0.3rem;
+    background: rgba(37, 99, 235, 0.22);
 }
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-    [data-testid="stChatMessageContent"] { border-bottom-left-radius: 0.3rem; }
 </style>
 """, unsafe_allow_html=True)
 
