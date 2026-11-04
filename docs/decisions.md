@@ -11,17 +11,17 @@ Status key: *decided* (fixed), *provisional* (revisit if evidence says so), *ope
 
 ## D1. What to build — *decided 2026-09-10*
 
-The course requires a project that *uses* generative AI; the topic is open. Selection criteria:
+The goal: a project that *uses* generative AI, on any topic. Selection criteria:
 (1) Gen AI is the core, not decoration; (2) buildable in about eight evenings alongside a
 bachelor's thesis; (3) doubles as portfolio evidence in payments/fintech; (4) has a live demo
-that fits a ten-minute lab slot.
+that fits a ten-minute slot.
 
 | Option | Verdict |
 |---|---|
 | **Dispute intake assistant** — turn a cardholder's messy complaint into a structured dispute case file, asking only for what is missing | **→ chosen.** Exercises extraction, structured output, multi-turn state, and hallucination control, all measurable. Domain I know from work. |
 | Evidence-based adjudication copilot — RAG over dispute-regime rules producing a cited recommendation for a human | Honourable mention. Stronger reasoning story, but needs a realistic synthetic case corpus before anything can be built or evaluated — a week of work on its own. |
 | Regime-aware customer-communication generator — templated dispute letters per regime with an LLM-as-judge compliance check | Honourable mention. Smallest scope; weaker demo (text generation looks like every other LLM demo). |
-| RAG Q&A over a personal Markdown knowledge base | Independent of the domain; strong "built the thing the course is about" story; weaker portfolio link. |
+| RAG Q&A over a personal Markdown knowledge base | Independent of the domain; strong "built a core generative-AI pattern" story; weaker portfolio link. |
 | Lab-report generator from raw experiment notes | Fallback only. |
 | Image/audio generation, fine-tuning projects | Ruled out: no career overlap; fine-tuning too expensive for the timeline and unnecessary for the behaviour needed. |
 
@@ -39,8 +39,8 @@ coverage section instead of regime, fraud indicators such as a claim filed days 
 start. It was dropped the same day.
 
 - **→ Card disputes.** The domain I work in, so the questionnaire, dispute types, and
-  inconsistency rules come from real knowledge rather than guesses. The professor accepts
-  projects that repurpose a student's own domain, provided the deliverable stands alone.
+  inconsistency rules come from real knowledge rather than guesses, and the deliverable still
+  stands alone.
 - Insurance FNOL. Would have removed any question of overlap with my thesis, but the
   independence is achieved another way (see D3), and the domain knowledge would have been
   thinner.
@@ -99,9 +99,9 @@ cannot act (see D9).
 | Option | Verdict |
 |---|---|
 | TypeScript on Node (my strongest stack) | Drafted first — full plan written, then dropped. |
-| **→ Python 3.10** | Chosen because the course and professor lean Python, and the Python SDK + Pydantic + Streamlit is the most direct path. 3.10 is the SDK's floor and the course's version. |
+| **→ Python 3.10** | Chosen because the Python SDK + Pydantic + Streamlit is the most direct path. 3.10 is the SDK's floor. |
 | Environment: local Anaconda install | Not installed on my machine; system Python is 3.9. |
-| Environment: `uv` / plain venv | Fast, but not the course's tooling. |
+| Environment: `uv` / plain venv | Fast, but conda is more familiar to most readers. |
 | **→ Conda environment (`environment.yml`) running inside Docker** | The same file works for anyone with Anaconda (`conda env create -f environment.yml`) and for anyone with only Docker (`docker compose up`). conda-forge only: Anaconda's default channels now require accepting Terms of Service, which broke a non-interactive build. |
 
 ## D7. Demo surface — *decided 2026-09-10*
@@ -110,7 +110,7 @@ cannot act (see D9).
 |---|---|
 | Terminal chat (CLI) | Drafted first. Cheapest, but hard for an audience to follow. |
 | Custom web UI (Express + static page, later Streamlit) | A web demo was required. |
-| **→ Streamlit** | Chosen. One Python file, chat pane plus a live case-file panel that re-renders every turn (type, regime, missing fields shrinking, flags appearing). The course-native demo format. Sessions are in memory — acceptable for a demo, stated in limitations. |
+| **→ Streamlit** | Chosen. One Python file, chat pane plus a live case-file panel that re-renders every turn (type, regime, missing fields shrinking, flags appearing). The standard Python demo format. Sessions are in memory — acceptable for a demo, stated in limitations. |
 
 ## D8. Evaluation design — *decided 2026-09-10*
 
@@ -144,12 +144,12 @@ mapping to code in the project plan; results in the report's Security section.
 
 ## D11. A second model for sampling parameters — *decided 2026-09-17, revised 2026-10-28*
 
-The rubric asks for parameterisation such as temperature. Opus 5.5 rejects temperature,
+Visible parameterisation such as temperature was a goal. Opus 5.5 rejects temperature,
 top_p and top_k, so the extraction path cannot show them.
 
 | Option | Verdict |
 |---|---|
-| Show only `max_tokens` and `effort` on Opus 5.5 | Honest but misses the rubric's own example. |
+| Show only `max_tokens` and `effort` on Opus 5.5 | Honest, but temperature is the parameter people know. |
 | **→ Add a sampling path on Claude Sonnet 4.6** | Chosen. Same prompt, same schema, same `messages.parse`; only the model and the sampling fields differ. Sonnet 4.6 is the newest generation that still accepts sampling parameters. No thinking on this path: extended thinking constrains sampling. |
 | Move all extraction to Sonnet 4.6 | Rejected: trades capability on every turn for a knob that extraction does not want (low temperature is the right setting for extraction anyway). |
 

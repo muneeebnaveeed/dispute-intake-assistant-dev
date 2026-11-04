@@ -4,9 +4,9 @@ SYSTEM_PROMPT is frozen: no dates, IDs or per-session values, so the prefix is i
 every request and prompt caching can reuse it. The filing date travels in the first user
 turn instead (see first_turn), which also never changes during a conversation.
 
-Prompt techniques used here, in the rubric's vocabulary: role prompting, explicit rules
-(including the abstention / null rule), one-shot example, delimiting untrusted input
-(spotlighting), and grounded contradiction detection (every flag quotes its evidence).
+Prompt techniques used here: persona, explicit rules (including the abstention / null rule),
+few-shot examples, delimiting untrusted input (spotlighting), and grounded contradiction
+detection (every flag quotes its evidence).
 """
 from anthropic.types import MessageParam
 

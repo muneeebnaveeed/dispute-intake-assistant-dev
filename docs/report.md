@@ -131,6 +131,5 @@ and a link to its own transaction records instead of trusting the cardholder's f
 regulatory regimes are simplified labels, not legal advice. Each turn takes about 5 to 25 seconds.
 
 **References.** Abdelnabi, S., Fay, A., Salem, A., et al. (2025). *LLMail-Inject: A Dataset from
-a Realistic Adaptive Prompt Injection Challenge.* arXiv:2506.09956. · University of Debrecen,
-*Introduction to Generative AI* (Fall 2026): grading criteria and "The Basics of Prompt
-Engineering". · Anthropic, Claude API documentation.
+a Realistic Adaptive Prompt Injection Challenge.* arXiv:2506.09956. · Anthropic, Claude API
+documentation.

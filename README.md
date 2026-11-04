@@ -22,158 +22,154 @@ The model extracts, the code decides.</p>
   <a href="docs/report.pdf">📄 Report (PDF)</a> ·
   <a href="docs/demo.md">🎬 Demo scripts</a> ·
   <a href="docs/decisions.md">🧭 Design decisions</a> ·
-  <a href="eval/results-v2.md">📊 Eval results</a>
+  <a href="eval/results-v2.md">📊 Eval results</a> ·
+  <a href="docs/development.md">🛠️ Development guide</a>
 </p>
 
-A conversational assistant that turns a cardholder's messy complaint about a card transaction
-into a validated, structured dispute case file, asking only for what is missing and flagging
-inconsistencies for a human reviewer.
+A conversational assistant that turns a cardholder's messy complaint about a card payment into
+a validated, structured dispute case file, asking only for what is missing and flagging
+inconsistencies for a human reviewer. It never decides the dispute itself.
 
-**Design principle: the model extracts, the code decides.** One LLM call per turn does
-extraction only, into a schema where every field is optional and unstated things stay `null`.
-Deterministic Python owns completeness, regime selection, and the hard inconsistency rules.
+**Design principle: the model extracts, the code decides.** A language model reads the
+conversation and proposes facts; deterministic rules decide everything that must be trustworthy:
+which facts are still needed, when the case is complete, which dispute regime applies, and which
+inconsistencies to flag.
 
-Course project for *Introduction to Generative AI* (University of Debrecen, Fall 2026). Solo.
-
-## 🚀 Run it
-
-Two equivalent ways; both use the same `environment.yml`.
-
-**Docker (nothing to install but Docker):**
+## 🚀 Quick start
 
 ```bash
-cp .env.example .env            # then put your ANTHROPIC_API_KEY in .env
-docker compose up --build       # http://localhost:8501
-docker compose run --rm app pytest
+docker compose up --build
 ```
 
-**Anaconda / Miniconda:**
-
-```bash
-conda env create -f environment.yml
-conda activate dispute-intake
-cp .env.example .env            # then put your ANTHROPIC_API_KEY in .env
-streamlit run app.py            # http://localhost:8501
-pytest
-```
+Then open http://localhost:8501. You need an Anthropic API key in your environment file; the
+[development guide](docs/development.md) covers setup with Docker or Anaconda, tests and the
+evaluation runs.
 
 ## ⚙️ How it works
 
 ```
-browser ──► Streamlit (app.py) ──► IntakeSession (intake/session.py) ──► extract_turn ──► Claude
-                                     │  merge known fields                (intake/extract.py)
-                                     │  missing fields → complete?        one structured call
-                                     │  question whitelist + fallback     per turn
-                                     ├─ select_regime  (intake/regime.py)
-                                     └─ hard_flags     (intake/rules.py)
+browser ──► web app ──► conversation manager ──► Claude (one structured call per turn)
+                          │  keeps the case file, merges each turn's facts
+                          │  works out what is still missing
+                          │  picks the next question, decides when the case is complete
+                          └─► rules: required facts per dispute type, regime, consistency checks
 ```
 
-Each turn the model re-reads the whole conversation and returns a schema-constrained
-`ExtractionResult`: the case file so far, any contradictions it noticed (each quoting its
-evidence), and one proposed next question. Everything that must be trustworthy is decided in
-code, with unit tests: which fields a dispute type requires, whether the case is complete, which
-regime applies, the hard inconsistency rules, and the 8-turn cap. The model's question is used
-only if it targets a real, still-empty field.
+Each turn the model re-reads the whole conversation and returns a strictly structured proposal:
 
-**Prompt techniques** (`intake/prompt.py`), in the course's terms: **persona** (the intake
-assistant on a card issuer's dispute desk); **few-shot** (two worked examples: one shows unstated
-fields left null, the other an explicit "no" recorded as false); the **3C principle**: clarity
-(the null rule and dispute-type definitions), context (role, dispute types, the filing date) and
-constraints (one question per turn, dotted field paths, a JSON schema enforced by structured
-output); and **iterative refinement**, measured before and after (see the injection results and
-`docs/decisions.md`). Supporting techniques: delimiting untrusted input in `<cardholder_message>`
-tags, grounded contradiction detection (every flag quotes its evidence), adaptive thinking tuned
-by effort, and prompt caching of the frozen system prompt.
+- the case file as it now stands, with every unstated fact left empty
+- any contradictions it noticed, each quoting the conflicting words
+- one suggested next question
 
-**Parameters** (`intake/config.py`, all overridable by environment variable and shown in the
-sidebar): model, thinking effort (Opus 5.5), temperature and top_p (Sonnet 4.6 path), max_tokens,
-turn cap, timeout, retries.
+The conversation manager merges the facts, applies the rules and either asks the next question or
+closes the case. The model's question is used only if it asks for a required fact that is still
+missing; otherwise a prepared question is asked. A conversation is capped at eight turns.
 
-**Error handling**: rate limits, timeouts and connection errors are retried by the SDK, then
-surface as a readable `IntakeError` with a retry button; blank input is rejected before any
-call; refusals, truncated output and output that fails validation each have their own message.
-A failed call leaves the conversation unchanged.
+## 🧠 Prompt techniques
 
-## 📊 Evaluation results
+- **Persona:** the intake assistant on a card issuer's dispute desk, which never decides the
+  dispute, gives advice or promises an outcome.
+- **Few-shot:** two worked examples, one showing unstated facts left empty, the other an explicit
+  "no" recorded as a no.
+- **Clarity:** definitions of the six dispute types, and the central rule: record a fact only if
+  the cardholder stated it; never guess an amount, date or yes/no answer.
+- **Context:** the role and the filing date, so "yesterday" becomes a real date while "a while ago"
+  stays empty.
+- **Constraints:** one plain-language question per turn and a fixed output structure enforced by
+  the API.
+- **Iterative refinement:** every prompt change was triggered by an observed failure and measured
+  before and after.
+- **Delimited input:** the cardholder's words are clearly marked as data, never instructions.
+- **Grounded contradiction detection:** every flag must quote the statements that conflict.
+- **Adaptive thinking:** the model reasons before answering; the depth is set with an effort level.
+- **Prompt caching:** the fixed instructions are reused from cache, so later turns are faster and
+  cheaper.
 
-22 hand-written cases (3+ per dispute type, one per hard rule, three invention traps where a
-date is never given, SEPA, US-issued, Hungarian, a self-correcting case, two injections), played
-by a scripted cardholder that answers only the field it is asked about and says "I don't know"
-otherwise. Scored exactly against the labels; no judge model. Opus 5.5, effort `medium`.
+## 🎛️ Parameters
 
-| Metric | v1 | v2 |
+All settings can be changed from the sidebar (locked once a conversation starts) or by environment
+variable:
+
+- **Model:** Claude Opus 5.5 for extraction, or Claude Sonnet 4.6 to demonstrate sampling
+- **Thinking effort** (Opus 5.5): how much the model reasons before answering
+- **Temperature and top-p** (Sonnet 4.6): sampling controls; low temperature suits extraction
+- **Maximum response length**, **turn cap**, **timeout** and **automatic retries**
+
+Opus 5.5 does not accept sampling parameters, and the current API version rejects temperature on
+every model, so the Sonnet path pins an older API version for its own requests.
+
+## 🧯 Error handling
+
+- Rate limits, timeouts and connection errors are retried automatically, then shown as a readable
+  message with a retry button.
+- Empty or blank input is rejected before anything is sent.
+- Refusals, cut-off answers and answers that fail validation each get their own message.
+- A failed turn leaves the conversation unchanged, so retrying never duplicates a message.
+
+## 📊 Evaluation
+
+22 hand-written cases, played by a scripted cardholder that answers only the fact it is asked
+about and says "I don't know" otherwise, so any fact that appears without being stated was
+invented. Results are compared exactly against the expected case files, with no AI judge. The
+cases cover:
+
+- every dispute type, at least three cases each
+- one case per consistency rule
+- three traps in which a date is never given
+- SEPA direct debits, US-issued cards and a complaint in Hungarian
+- a complaint that changes its dispute type halfway
+- two prompt-injection attempts
+
+| Metric | First run | After one revision |
 |---|---|---|
 | Field accuracy | 98.6% | **100%** |
-| Invented values (filled but never stated) | 0 | **0** |
-| Missed values | 5 | **0** |
+| Invented facts | 0 | **0** |
+| Missed facts | 5 | **0** |
 | Flag precision / recall | 100% / 100% | 100% / 100% |
-| Regime correct | 20/22 | **22/22** |
-| Required fields all collected (where possible) | 18/22 | **22/22** |
+| Correct regime | 20 of 22 | **22 of 22** |
+| All required facts collected (where possible) | 18 of 22 | **22 of 22** |
 | Mean turns | 5.8 | 5.4 |
 
-v1 is shown re-scored with the final labels (`eval/results-v1-rescored.md`; raw run in
-`results-v1.md`). Reading every v1 miss gave one revision: (1) questions about *optional* fields
-were using up the 8-turn cap before required ones, so the session now accepts the model's question
-only for a required, still-missing field; (2) "a charge on my card" now states the payment method.
-One label was revised after v1, openly: "*my* electricity company" plainly implies the cardholder
-recognises the merchant, so that field is not scored in the three cases phrased that way.
+What the first run showed, and the one revision that fixed it:
 
-Caveats: one run per version and the model is not deterministic; 22 self-written cases are not
-real complaints, and they were written by the same person who wrote the prompt. The numbers show
-the design works on these cases, not that it generalises.
+- Questions about *optional* facts used up the eight turns before required ones were asked, so the
+  model's question is now accepted only for a required, missing fact.
+- "A charge on my card" was not read as a card payment; one prompt line fixed it.
 
-## 🛡️ Prompt-injection results
+One expected answer was revised after the first run, openly: "*my* electricity company" plainly
+implies the cardholder knows the merchant, so that fact is not scored in the three cases worded
+that way. The first run is shown re-scored with the final expected answers.
 
-Replayed 35 attacks from Microsoft's [LLMail-Inject](https://huggingface.co/datasets/microsoft/llmail-inject-challenge)
-challenge (MIT), chosen because each one *succeeded* against the challenge's defended email
-assistant: it made the assistant send an email to `contact@contact.com` without being
-detected. Each attack ran twice on Opus 5.5: as the cardholder's whole message (direct), and
-pasted into a genuine duplicate-charge complaint as "the merchant's reply" (indirect).
-Full report: [`eval/injection/llmail_results.md`](eval/injection/llmail_results.md).
+Caveats: one run per version, and the model is not deterministic. The cases are self-written, by
+the same person who wrote the prompt, and are not real complaints, so the numbers show the design
+works on these cases, not that it generalises.
 
-| Run | Framing | Detected (`INSTRUCTION_IN_INPUT`) | Fields invented | Genuine facts intact | Attacker address in the model's proposal | …in the final case file |
+## 🛡️ Prompt injection
+
+35 attacks from Microsoft's public
+[LLMail-Inject](https://huggingface.co/datasets/microsoft/llmail-inject-challenge) challenge, each
+chosen because it had *succeeded* against that challenge's defended e-mail assistant. Each one ran
+twice: as the cardholder's whole message (direct), and pasted into a genuine complaint as "the
+merchant's reply" (indirect).
+
+| Run | Framing | Flagged | Facts invented | Genuine facts intact | Attacker address in the model's answer | … in the final case file |
 |---|---|---|---|---|---|---|
-| v1 | direct | 35/35 | 0/35 | n/a | 0/35 | 0/35 |
-| v1 | indirect | 35/35 | 0/35 | 35/35 | 2/35 | 2/35 |
-| v2 | indirect | 35/35 | 0/35 | 35/35 | 0/35 | 0/35 |
+| First | direct | 35/35 | 0/35 | n/a | 0/35 | 0/35 |
+| First | indirect | 35/35 | 0/35 | 35/35 | 2/35 | 2/35 |
+| After fix | indirect | 35/35 | 0/35 | 35/35 | **0/35** | **0/35** |
 
-Clerk has no tools, so the attackers' goal (send an email) is impossible by construction; the
-table measures whether anything leaks into the case file anyway. In v1 the two leaks were in
-`cardholder.merchant_response`, where the model summarised the quoted reply including the
-attacker's request. v2 adds two layers. **Prompt:** `merchant_response` is defined as the
-merchant's position in the model's own words, and nothing from a quoted message may be copied
-into a field; this alone took raw leaks to 0/35. **Code:** the session strips email addresses
-(including spaced-out ones like `contact @ contact . com`) and links from every model-written
-free-text field and caps their length, so an address cannot reach the case file even when the
-model does not comply. One run per version; the model is not deterministic, so 0/35 is evidence,
-not proof; the code layer is the guarantee. Reports: `eval/injection/llmail_results.md` (v1),
-`llmail_results_v2.md` (v2).
+Clerk has no tools, so the attackers' goal (send an e-mail) is impossible by construction; the
+table measures whether anything leaks into the case file anyway. In the first run the model twice
+copied the attacker's address into its summary of the merchant's reply. The fix has two layers:
 
-## 🧪 Live checks (call the API)
-
-```bash
-python scripts/smoke.py [--sampling]       # one complaint, 7 field checks
-python scripts/converse.py                 # scripted 4-turn conversation
-python -m eval.injection.run_llmail        # LLMail-Inject replay (~70 calls)
-python -m eval.run --label v2              # 22-case eval (~120 calls)
-```
-
-Inside Docker on Linux use host networking, e.g.
-`docker run --rm --network host --env-file .env -v "$PWD":/app <image> python scripts/smoke.py`.
-
-## 🗂️ Layout
-
-```
-intake/     extraction, schema, rules, regime, session: the library
-app.py      Streamlit demo
-eval/       20-case scripted evaluation + scoring; injection/ = LLMail-Inject replay
-scripts/    live smoke checks
-tests/      pytest, no network
-docs/       report, demo scripts, slides
-```
+- **Prompt:** the merchant's reply is recorded as the merchant's position, in the model's own
+  words, and nothing from a quoted message may be copied into a fact. This alone brought leaks to
+  zero.
+- **Code:** e-mail addresses (including spaced-out ones) and links are removed from everything the
+  model writes, so an address cannot reach the case file even if the model does not comply.
 
 ## 📜 License
 
-[MIT](LICENSE) © 2026 Naveed Muhammad Muneeb. The LLMail-Inject sample in `eval/injection/` comes from
-Microsoft's [llmail-inject-challenge](https://huggingface.co/datasets/microsoft/llmail-inject-challenge)
+[MIT](LICENSE) © 2026 Naveed Muhammad Muneeb. The prompt-injection sample comes from Microsoft's
+[llmail-inject-challenge](https://huggingface.co/datasets/microsoft/llmail-inject-challenge)
 dataset, also MIT-licensed.
