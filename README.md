@@ -1,9 +1,31 @@
-# Clerk
+<h1 align="center">🗂️ Clerk</h1>
 
-**A dispute intake assistant.**
+<p align="center"><b>A dispute intake assistant.</b><br>
+The model extracts, the code decides.</p>
+
+<p align="center">
+  <img alt="Python 3.10" src="https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white">
+  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-app-FF4B4B?logo=streamlit&logoColor=white">
+  <img alt="Claude Opus 5.5" src="https://img.shields.io/badge/Claude-Opus%205.5-D97757?logo=anthropic&logoColor=white">
+  <img alt="Pydantic v2" src="https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
+</p>
+<p align="center">
+  <img alt="Tests: 177 passed" src="https://img.shields.io/badge/tests-177%20passed-2EA44F?logo=pytest&logoColor=white">
+  <img alt="Eval: 100% field accuracy" src="https://img.shields.io/badge/eval-100%25%20field%20accuracy-2EA44F">
+  <img alt="Invented facts: 0" src="https://img.shields.io/badge/invented%20facts-0-2EA44F">
+  <img alt="Prompt injection: 35/35 flagged" src="https://img.shields.io/badge/LLMail--Inject-35%2F35%20flagged-6F42C1">
+</p>
+
+<p align="center">
+  <a href="docs/report.pdf">📄 Report (PDF)</a> ·
+  <a href="docs/demo.md">🎬 Demo scripts</a> ·
+  <a href="docs/decisions.md">🧭 Design decisions</a> ·
+  <a href="eval/results-v2.md">📊 Eval results</a>
+</p>
 
 A conversational assistant that turns a cardholder's messy complaint about a card transaction
-into a validated, structured dispute case file — asking only for what is missing and flagging
+into a validated, structured dispute case file, asking only for what is missing and flagging
 inconsistencies for a human reviewer.
 
 **Design principle: the model extracts, the code decides.** One LLM call per turn does
@@ -12,7 +34,7 @@ Deterministic Python owns completeness, regime selection, and the hard inconsist
 
 Course project for *Introduction to Generative AI* (University of Debrecen, Fall 2026). Solo.
 
-## Run it
+## 🚀 Run it
 
 Two equivalent ways; both use the same `environment.yml`.
 
@@ -34,7 +56,7 @@ streamlit run app.py            # http://localhost:8501
 pytest
 ```
 
-## How it works
+## ⚙️ How it works
 
 ```
 browser ──► Streamlit (app.py) ──► IntakeSession (intake/session.py) ──► extract_turn ──► Claude
@@ -71,7 +93,7 @@ surface as a readable `IntakeError` with a retry button; blank input is rejected
 call; refusals, truncated output and output that fails validation each have their own message.
 A failed call leaves the conversation unchanged.
 
-## Evaluation results
+## 📊 Evaluation results
 
 22 hand-written cases (3+ per dispute type, one per hard rule, three invention traps where a
 date is never given, SEPA, US-issued, Hungarian, a self-correcting case, two injections), played
@@ -99,7 +121,7 @@ Caveats: one run per version and the model is not deterministic; 22 self-written
 real complaints, and they were written by the same person who wrote the prompt. The numbers show
 the design works on these cases, not that it generalises.
 
-## Prompt-injection results
+## 🛡️ Prompt-injection results
 
 Replayed 35 attacks from Microsoft's [LLMail-Inject](https://huggingface.co/datasets/microsoft/llmail-inject-challenge)
 challenge (MIT), chosen because each one *succeeded* against the challenge's defended email
@@ -114,7 +136,7 @@ Full report: [`eval/injection/llmail_results.md`](eval/injection/llmail_results.
 | v1 | indirect | 35/35 | 0/35 | 35/35 | 2/35 | 2/35 |
 | v2 | indirect | 35/35 | 0/35 | 35/35 | 0/35 | 0/35 |
 
-Clerk has no tools, so the attackers' goal — send an email — is impossible by construction; the
+Clerk has no tools, so the attackers' goal (send an email) is impossible by construction; the
 table measures whether anything leaks into the case file anyway. In v1 the two leaks were in
 `cardholder.merchant_response`, where the model summarised the quoted reply including the
 attacker's request. v2 adds two layers. **Prompt:** `merchant_response` is defined as the
@@ -123,10 +145,10 @@ into a field; this alone took raw leaks to 0/35. **Code:** the session strips em
 (including spaced-out ones like `contact @ contact . com`) and links from every model-written
 free-text field and caps their length, so an address cannot reach the case file even when the
 model does not comply. One run per version; the model is not deterministic, so 0/35 is evidence,
-not proof — the code layer is the guarantee. Reports: `eval/injection/llmail_results.md` (v1),
+not proof; the code layer is the guarantee. Reports: `eval/injection/llmail_results.md` (v1),
 `llmail_results_v2.md` (v2).
 
-## Live checks (call the API)
+## 🧪 Live checks (call the API)
 
 ```bash
 python scripts/smoke.py [--sampling]       # one complaint, 7 field checks
@@ -138,10 +160,10 @@ python -m eval.run --label v2              # 22-case eval (~120 calls)
 Inside Docker on Linux use host networking, e.g.
 `docker run --rm --network host --env-file .env -v "$PWD":/app <image> python scripts/smoke.py`.
 
-## Layout
+## 🗂️ Layout
 
 ```
-intake/     extraction, schema, rules, regime, session — the library
+intake/     extraction, schema, rules, regime, session: the library
 app.py      Streamlit demo
 eval/       20-case scripted evaluation + scoring; injection/ = LLMail-Inject replay
 scripts/    live smoke checks
