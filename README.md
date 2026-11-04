@@ -9,6 +9,7 @@ The model extracts, the code decides.</p>
   <img alt="Claude Opus 5.5" src="https://img.shields.io/badge/Claude-Opus%205.5-D97757?logo=anthropic&logoColor=white">
   <img alt="Pydantic v2" src="https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow"></a>
 </p>
 <p align="center">
   <img alt="Tests: 177 passed" src="https://img.shields.io/badge/tests-177%20passed-2EA44F?logo=pytest&logoColor=white">
@@ -170,3 +171,9 @@ scripts/    live smoke checks
 tests/      pytest, no network
 docs/       report, demo scripts, slides
 ```
+
+## 📜 License
+
+[MIT](LICENSE) © 2026 Naveed Muhammad Muneeb. The LLMail-Inject sample in `eval/injection/` comes from
+Microsoft's [llmail-inject-challenge](https://huggingface.co/datasets/microsoft/llmail-inject-challenge)
+dataset, also MIT-licensed.
